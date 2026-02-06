@@ -28,39 +28,59 @@
   #topbar {
     position: fixed;
     top: 0; left: 0; right: 0;
-    padding: 20px 24px;
+    padding: 24px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 100;
-    transition: color 0.4s, background 0.4s;
+    transition: background 0.3s, backdrop-filter 0.3s;
   }
-  #topbar.scrolled { background: inherit; backdrop-filter: blur(10px); }
+  #topbar.scrolled {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
   #topbar .name {
-    display: flex;
-    align-items: center;
-    gap: 0;
     text-decoration: none;
     color: inherit;
-    font-family: 'Familjen Grotesk', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    transition: opacity 0.3s, font-family 0.4s;
+  }
+  #topbar .name:hover {
+    opacity: 0.7;
   }
   #topbar .cta-link {
-    font-family: 'Familjen Grotesk', sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     text-decoration: none;
     color: inherit;
-    background: none;
-    border: 1.5px solid currentColor;
-    padding: 6px 18px;
-    border-radius: 999px;
-    opacity: 0.7;
-    transition: opacity 0.3s;
+    padding: 8px 20px;
+    border-radius: 8px;
+    opacity: 0.8;
+    transition: all 0.3s, font-family 0.4s;
     cursor: pointer;
+    border: 1px solid;
   }
-  #topbar .cta-link:hover { opacity: 1; }
+  #topbar .cta-link:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    #topbar {
+      padding: 20px 20px;
+    }
+    #topbar .name {
+      font-size: 0.95rem;
+    }
+    #topbar .cta-link {
+      font-size: 0.8rem;
+      padding: 6px 14px;
+    }
+  }
 
   /* Floating style name toast */
   #style-toast {
@@ -1292,8 +1312,8 @@
 <div id="overlay"></div>
 
 <div id="topbar">
-  <a class="name" href="#">Tobiasbouw</a>
-  <button class="cta-link" onclick="chatOpen('work_with_me')">Work with me</button>
+  <a class="name" href="#">Tobias Bouw</a>
+  <a class="cta-link" href="#cta">Work with me</a>
 </div>
 
 <main id="content">
@@ -1649,6 +1669,17 @@ function applyStyle(s) {
 
   // Topbar
   topbar.style.color = s.fg;
+  const topbarName = topbar.querySelector('.name');
+  const topbarCta = topbar.querySelector('.cta-link');
+  if (topbarName) {
+    topbarName.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+    topbarName.style.fontWeight = s.headlineWeight;
+  }
+  if (topbarCta) {
+    topbarCta.style.fontFamily = `'${s.labelFont}', sans-serif`;
+    topbarCta.style.borderColor = `${s.fg}20`;
+    topbarCta.style.background = `${s.fg}08`;
+  }
 
   // Sections
   sections.forEach(sec => {
@@ -1774,6 +1805,60 @@ function applyStyle(s) {
   } else {
     overlay.style.opacity = '0';
   }
+
+  // CTA Options
+  document.querySelectorAll('.cta-option').forEach(option => {
+    option.style.background = s.cardBg;
+    option.style.border = `1px solid ${s.fg}15`;
+    option.style.borderRadius = '12px';
+  });
+  document.querySelectorAll('.cta-option h3').forEach(h3 => {
+    h3.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+    h3.style.fontWeight = s.headlineWeight;
+  });
+  document.querySelectorAll('.cta-option p').forEach(p => {
+    p.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    p.style.color = s.bodyColor;
+  });
+  document.querySelectorAll('.cta-option input').forEach(input => {
+    input.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    input.style.borderColor = `${s.fg}15`;
+    input.style.background = `${s.bg}40`;
+    input.style.color = s.fg;
+  });
+  document.querySelectorAll('.cta-option button').forEach(btn => {
+    btn.style.fontFamily = `'${s.labelFont}', sans-serif`;
+    btn.style.background = `${s.fg}10`;
+    btn.style.color = s.fg;
+    btn.style.borderColor = `${s.fg}20`;
+  });
+
+  // FAQ Section
+  const faqInput = document.getElementById('faq-input');
+  if (faqInput) {
+    faqInput.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    faqInput.style.borderColor = `${s.fg}15`;
+    faqInput.style.background = s.cardBg;
+    faqInput.style.color = s.fg;
+  }
+  const faqSend = document.getElementById('faq-send');
+  if (faqSend) {
+    faqSend.style.background = `${s.fg}10`;
+    faqSend.style.color = s.fg;
+    faqSend.style.borderColor = `${s.fg}20`;
+  }
+  document.querySelectorAll('.faq-answer').forEach(answer => {
+    answer.style.background = s.cardBg;
+    answer.style.border = `1px solid ${s.fg}15`;
+  });
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+    q.style.fontWeight = s.headlineWeight > 700 ? 600 : 500;
+  });
+  document.querySelectorAll('.faq-response').forEach(r => {
+    r.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    r.style.color = s.bodyColor;
+  });
 
   // Update chat accent color
   if (typeof applyChatStyles === 'function') applyChatStyles();
