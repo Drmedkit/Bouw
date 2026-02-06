@@ -457,7 +457,7 @@ def api_chat():
             result = json.loads(raw)
             greeting = result.get("reply", "Hey! Tell me about your business and I'll design something for you right now.")
         except Exception:
-            greeting = "Hey! I'm Tobias's AI assistant. Tell me about your business and I'll design a website for you right now."
+            greeting = "I'm Tobias Bouw's assistant. What's your business name?"
         return jsonify({
             "reply": greeting,
             "lead": empty_lead,
@@ -468,7 +468,7 @@ def api_chat():
         result, lead = call_chat_model(api_messages, lead_context, visitor_context)
     except json.JSONDecodeError:
         return jsonify({
-            "reply": "I'd love to hear more — tell me about your business!",
+            "reply": "What's your business name?",
             "lead": lead_context or empty_lead,
             "buildTriggered": False,
         })
@@ -501,7 +501,7 @@ def api_chat():
         thread.start()
 
         return jsonify({
-            "reply": result.get("reply", "Nice! Tell me more..."),
+            "reply": result.get("reply", "Understood. Continue."),
             "lead": lead,
             "buildTriggered": True,
             "jobId": job_id,
@@ -524,7 +524,7 @@ def api_chat():
         show_preview = has_email and build_status == "done" and has_page
 
         return jsonify({
-            "reply": result.get("reply", "Tell me more!"),
+            "reply": result.get("reply", "Got it."),
             "lead": lead,
             "buildTriggered": True,
             "jobId": existing_job,
@@ -534,7 +534,7 @@ def api_chat():
 
     # Phase 0: Still collecting minimum data
     return jsonify({
-        "reply": result.get("reply", "Tell me more about your business!"),
+        "reply": result.get("reply", "What's your business name?"),
         "lead": lead,
         "buildTriggered": False,
         "showPreview": False

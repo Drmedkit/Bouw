@@ -2594,7 +2594,7 @@ async function sendToAI(text) {
     // Fallback to deterministic mode
     useAI = false;
     chatState = 'ASKING_NAME';
-    addMsg('bot', 'Let me switch to quick mode. What\'s your name?');
+    addMsg('bot', 'What\'s your name?');
   }
 }
 
@@ -2722,7 +2722,7 @@ function processInputFallback(val) {
       chatLead.name = val;
       chatState = 'ASKING_EMAIL';
       fsChatInput.placeholder = 'you@example.com';
-      botSay('Nice to meet you, ' + chatLead.name + '! What\'s your email?')
+      botSay('What\'s your email address?')
         .then(() => fsChatInput.focus());
       break;
 
@@ -2730,19 +2730,19 @@ function processInputFallback(val) {
       chatLead.email = val;
       chatState = 'ASKING_BUSINESS';
       fsChatInput.placeholder = 'e.g. The Golden Fork';
-      botSay('Got it. What\'s your business called?')
+      botSay('What\'s your business name?')
         .then(() => fsChatInput.focus());
       break;
 
     case 'ASKING_BUSINESS':
       chatLead.business = val;
       chatState = 'ASKING_TYPE';
-      botSay('What kind of business is ' + chatLead.business + '?', 500)
+      botSay('What type of business?', 500)
         .then(() => {
           showQR(['Restaurant', 'Nightclub / Bar', 'Online Store', 'Other'], choice => {
             chatLead.type = choice;
             chatState = 'ASKING_VIBE';
-            botSay('What vibe fits ' + chatLead.business + '?', 500)
+            botSay('Which style direction?', 500)
               .then(() => {
                 showQR(['Warm & Elegant', 'Dark & Bold', 'Clean & Minimal', 'Loud & Electric', 'Playful & Fun', 'Raw & Edgy'], vibeChoice => {
                   chatLead.vibe = vibeChoice;
