@@ -4,5 +4,3 @@ anthropic==0.78.0
 openai
 resend
 tenacity
-resend
-tenacity

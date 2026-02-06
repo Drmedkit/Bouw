@@ -2118,9 +2118,11 @@ const iframeLabel = document.getElementById('demo-iframe-label');
 const leadCaptureCta = document.getElementById('lead-capture-cta');
 
 let chatState = 'IDLE';
-const chatLead = { name: '', email: '', business: '', type: '', vibe: '' };
-const chatHistory = []; // {role:'user'|'bot', text:'...'}
-let useAI = false; // set true when /api/chat is reachable
+const chatLead = { name: '', email: '', business: '', type: '', vibe: '', tagline: '', colors: '', services: '', audience: '', features: '' };
+const chatHistory = [];
+let useAI = false;
+let currentJobId = null;
+let buildPolling = null;
 
 // Vibe → style theme mapping (fallback mode)
 const vibeStyleMap = {
@@ -2245,32 +2247,81 @@ fsChatInput.addEventListener('keydown', e => {
 // ── AI Mode ──
 async function sendToAI(text) {
   showTyping();
+  const endpoint = currentJobId ? '/api/chat/continue' : '/api/chat';
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory })
+      body: JSON.stringify({ messages: chatHistory, lead: chatLead })
     });
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
     hideTyping();
 
     if (data.reply) addMsg('bot', data.reply);
-    if (data.lead) Object.assign(chatLead, data.lead);
+    if (data.lead) {
+      for (const k in data.lead) {
+        if (data.lead[k]) chatLead[k] = data.lead[k];
+      }
+    }
 
-    // If API returned a full page, show it
-    if (data.page) {
-      chatState = 'DEMO';
-      localStorage.setItem('tbouw_preview_page', data.page);
-      showIframeDemo(data.page, chatLead.business || 'Your site');
+    if (data.buildTriggered && data.jobId) {
+      currentJobId = data.jobId;
+      startBuildPolling(data.jobId);
     }
   } catch (e) {
     hideTyping();
-    // Fall back to deterministic mode
     useAI = false;
     chatState = 'ASKING_NAME';
     addMsg('bot', 'Let me switch to quick mode. What\'s your name?');
   }
+}
+
+function startBuildPolling(jobId) {
+  if (buildPolling) clearInterval(buildPolling);
+  buildPolling = setInterval(async () => {
+    try {
+      const res = await fetch('/api/chat/status/' + jobId);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'done' && data.page) {
+        clearInterval(buildPolling);
+        buildPolling = null;
+        chatState = 'DEMO';
+        localStorage.setItem('tbouw_preview_page', data.page);
+
+        await botSay('Your website preview is ready! Take a look...', 500);
+
+        fsChatProgress.classList.add('active');
+        fcProgressFill.style.width = '0%';
+        fcProgressText.textContent = 'Loading preview...';
+        const steps = [
+          { pct: 30, text: 'Rendering design...' },
+          { pct: 60, text: 'Applying ' + (chatLead.vibe || 'your') + ' style...' },
+          { pct: 90, text: 'Personalizing for ' + (chatLead.business || 'you') + '...' },
+          { pct: 100, text: 'Done!' }
+        ];
+        steps.forEach((step, i) => {
+          setTimeout(() => {
+            fcProgressFill.style.width = step.pct + '%';
+            fcProgressText.textContent = step.text;
+            if (step.pct === 100) {
+              setTimeout(() => {
+                fsChatProgress.classList.remove('active');
+                chatClose();
+                showIframeDemo(data.page, chatLead.business || 'Your site');
+              }, 400);
+            }
+          }, (i + 1) * 400);
+        });
+      } else if (data.status === 'error') {
+        clearInterval(buildPolling);
+        buildPolling = null;
+      }
+    } catch (e) {
+      // keep polling
+    }
+  }, 2000);
 }
 
 // ── Fallback (deterministic) Mode ──
