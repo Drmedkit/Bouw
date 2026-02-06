@@ -4,10 +4,13 @@ import re
 import uuid
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 import pg8000
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
+import gspread
+from google.oauth2.service_account import Credentials
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
@@ -39,6 +42,67 @@ def get_db():
 
 build_jobs = {}
 build_lock = threading.Lock()
+
+GOOGLE_SPREADSHEET_ID = os.environ.get("GOOGLE_SPREADSHEET_ID", "")
+SHEET_HEADERS = ["Timestamp", "Job ID", "Status", "Business", "Type", "Vibe", "Email", "Name", "Phone", "Colors", "Tagline", "Services", "Audience", "Features", "Entry Context"]
+
+def get_gsheet():
+    sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+    if not sa_json or not GOOGLE_SPREADSHEET_ID:
+        return None
+    try:
+        creds_dict = json.loads(sa_json)
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        gc = gspread.authorize(creds)
+        return gc.open_by_key(GOOGLE_SPREADSHEET_ID).sheet1
+    except Exception as e:
+        print(f"[sheets] Error connecting to Google Sheets: {e}")
+        return None
+
+def sync_lead_to_sheet(job_id, lead, status="building", entry_context=""):
+    try:
+        sheet = get_gsheet()
+        if not sheet:
+            return
+        existing = sheet.get_all_values()
+        if not existing or existing[0] != SHEET_HEADERS:
+            sheet.clear()
+            sheet.append_row(SHEET_HEADERS)
+            existing = [SHEET_HEADERS]
+
+        row_data = [
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            job_id or "",
+            status,
+            lead.get("business", ""),
+            lead.get("type", ""),
+            lead.get("vibe", ""),
+            lead.get("email", ""),
+            lead.get("name", ""),
+            lead.get("phone", ""),
+            lead.get("colors", ""),
+            lead.get("tagline", ""),
+            lead.get("services", ""),
+            lead.get("audience", ""),
+            lead.get("features", ""),
+            entry_context or "",
+        ]
+
+        row_idx = None
+        for i, row in enumerate(existing):
+            if len(row) > 1 and row[1] == job_id:
+                row_idx = i + 1
+                break
+
+        if row_idx:
+            sheet.update(f"A{row_idx}:O{row_idx}", [row_data])
+            print(f"[sheets] Updated row {row_idx} for job {job_id}")
+        else:
+            sheet.append_row(row_data)
+            print(f"[sheets] Added new row for job {job_id}")
+    except Exception as e:
+        print(f"[sheets] Error syncing to sheet: {e}")
 
 AVAILABLE_FONTS = [
     "Syne", "Fira Code", "DM Serif Display", "Familjen Grotesk",
@@ -250,6 +314,13 @@ def save_lead_to_db(job_id, lead, status="building", page_html=None, entry_conte
         cur.close()
         conn.close()
         print(f"[db] Lead saved: {job_id} ({status})")
+
+        sync_thread = threading.Thread(
+            target=sync_lead_to_sheet,
+            args=(job_id, lead, status, entry_context),
+            daemon=True
+        )
+        sync_thread.start()
     except Exception as e:
         print(f"[db] Error saving lead: {e}")
 

@@ -5,7 +5,7 @@ integrations = ["python_anthropic_ai_integrations:1.0.0", "python_openrouter_ai_
 
 [nix]
 channel = "stable-25_05"
-packages = ["libpq", "postgresql", "python3"]
+packages = ["libffi", "libpq", "pkg-config", "postgresql", "python3"]
 
 [workflows]
 runButton = "Project"

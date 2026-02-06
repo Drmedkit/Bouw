@@ -4,3 +4,4 @@ openai
 pg8000
 google-auth
 gspread
+cffi
