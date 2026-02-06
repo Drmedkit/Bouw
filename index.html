@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tobias Bouw — Websites & AI Automations</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="description" content="I build websites & AI automations for small businesses. Fast, personal, no nonsense.">
+<meta property="og:title" content="Tobias Bouw — Websites & AI Automations">
+<meta property="og:description" content="I build websites & AI automations for small businesses. Fast, personal, no nonsense.">
+<meta property="og:image" content="/favicon.png">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Familjen+Grotesk:wght@400;600;700&family=Fira+Code:wght@400;700&family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@300;700&family=Orbitron:wght@400;700;900&family=Syne:wght@400;700;800&family=Unbounded:wght@400;700;900&family=Zilla+Slab:wght@400;700&display=swap" rel="stylesheet">
@@ -29,9 +37,16 @@
   }
   #topbar.scrolled { background: inherit; backdrop-filter: blur(10px); }
   #topbar .name {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    color: inherit;
+  }
+  #topbar .name img {
+    height: 28px;
+    width: 28px;
+    border-radius: 4px;
   }
   #topbar .cta-link {
     font-family: 'Familjen Grotesk', sans-serif;
@@ -1041,7 +1056,7 @@
 <div id="overlay"></div>
 
 <div id="topbar">
-  <span class="name">Tobias Bouw</span>
+  <a class="name" href="#"><img src="/favicon.svg" alt="Tobias Bouw"></a>
   <button class="cta-link" onclick="chatOpen('work_with_me')">Work with me</button>
 </div>
 
