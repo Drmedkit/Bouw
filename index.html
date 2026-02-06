@@ -1310,16 +1310,17 @@
 
   /* Cosmos - Starfield */
   @keyframes cosmosStarTwinkle {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.8); }
   }
 
   .cosmos-star {
     position: absolute;
-    width: 1px;
-    height: 1px;
-    background: rgba(232, 217, 255, 0.9);
+    width: 2px;
+    height: 2px;
+    background: rgba(232, 217, 255, 1);
     border-radius: 50%;
+    box-shadow: 0 0 4px rgba(157, 126, 255, 0.8), 0 0 8px rgba(157, 126, 255, 0.4);
     animation: cosmosStarTwinkle 3s ease-in-out infinite;
   }
 
@@ -1329,13 +1330,13 @@
       background: #3d2b1f;
     }
     25% {
-      background: #443021;
+      background: #4a3525;
     }
     50% {
-      background: #3f2820;
+      background: #442d20;
     }
     75% {
-      background: #443021;
+      background: #4a3525;
     }
     100% {
       background: #3d2b1f;
@@ -1343,15 +1344,15 @@
   }
 
   body.warm-analog-active #style-layer {
-    animation: warmAnalogGlow 30s ease-in-out infinite;
+    animation: warmAnalogGlow 25s ease-in-out infinite;
   }
 
   @keyframes warmAnalogVignette {
     0%, 100% {
-      box-shadow: inset 0 0 200px rgba(224, 122, 58, 0.08);
+      box-shadow: inset 0 0 250px rgba(224, 122, 58, 0.15);
     }
     50% {
-      box-shadow: inset 0 0 200px rgba(224, 122, 58, 0.12);
+      box-shadow: inset 0 0 250px rgba(224, 122, 58, 0.25);
     }
   }
 
@@ -1369,33 +1370,36 @@
     0%, 100% {
       background: linear-gradient(135deg, #f0f4f8 0%, #f0f4f8 100%);
     }
-    50% {
-      background: linear-gradient(135deg, #f0f4f8 0%, #e8f1f8 50%, #f0f4f8 100%);
+    33% {
+      background: linear-gradient(135deg, #e8f1f8 0%, #f0f4f8 40%, #d8e9f5 100%);
+    }
+    66% {
+      background: linear-gradient(135deg, #f0f4f8 0%, #deedf7 60%, #e8f1f8 100%);
     }
   }
 
   body.nordic-active #style-layer {
-    animation: nordicAurora 45s ease-in-out infinite;
+    animation: nordicAurora 35s ease-in-out infinite;
   }
 
   /* Memphis - Geometric Pulse */
   @keyframes memphisRotate {
     0% {
       transform: rotate(0deg) scale(1);
-      opacity: 0.15;
+      opacity: 0.25;
     }
     50% {
-      transform: rotate(180deg) scale(1.05);
-      opacity: 0.2;
+      transform: rotate(180deg) scale(1.08);
+      opacity: 0.35;
     }
     100% {
       transform: rotate(360deg) scale(1);
-      opacity: 0.15;
+      opacity: 0.25;
     }
   }
 
   #overlay.memphis {
-    animation: memphisRotate 60s linear infinite;
+    animation: memphisRotate 45s linear infinite;
   }
 
   /* Terminal - Scanline Drift */
@@ -1414,15 +1418,16 @@
 
   /* Fiesta - Confetti Sparkle */
   @keyframes fiestaSparkle {
-    0%, 90%, 100% { opacity: 0; }
-    50% { opacity: 0.7; }
+    0%, 85%, 100% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 0.9; transform: scale(1.2); }
   }
 
   .fiesta-confetti {
     position: absolute;
-    width: 3px;
-    height: 3px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
+    box-shadow: 0 0 3px currentColor;
     animation: fiestaSparkle 4s ease-in-out infinite;
   }
 </style>
@@ -1927,7 +1932,7 @@ function applyStyle(s) {
   overlay.style.background = 'none';
 
   if (s.overlay === 'scanlines') {
-    overlay.style.background = 'repeating-linear-gradient(transparent,transparent 2px,rgba(0,255,65,0.03) 2px,rgba(0,255,65,0.03) 4px)';
+    overlay.style.background = 'repeating-linear-gradient(transparent,transparent 2px,rgba(0,255,65,0.06) 2px,rgba(0,255,65,0.06) 4px)';
   } else if (s.overlay === 'grid') {
     overlay.style.background = 'repeating-linear-gradient(90deg,#ff297518 0px,transparent 1px,transparent 80px),repeating-linear-gradient(0deg,#ff297518 0px,transparent 1px,transparent 80px)';
     overlay.style.transform = 'perspective(400px) rotateX(35deg)';
@@ -2034,8 +2039,8 @@ function initCosmosStars() {
   // Remove any existing stars first
   document.querySelectorAll('.cosmos-star').forEach(el => el.remove());
 
-  // Generate 30 stars with random positions and delays
-  for (let i = 0; i < 30; i++) {
+  // Generate 50 stars with random positions and delays
+  for (let i = 0; i < 50; i++) {
     const star = document.createElement('div');
     star.className = 'cosmos-star';
     star.style.left = Math.random() * 100 + '%';
@@ -2051,13 +2056,14 @@ function initFiestaConfetti() {
   // Remove any existing confetti first
   document.querySelectorAll('.fiesta-confetti').forEach(el => el.remove());
 
-  // Generate 20 confetti dots
-  for (let i = 0; i < 20; i++) {
+  // Generate 35 confetti dots with varied colors
+  const colors = ['#ffd23f', '#fff5e1', '#ff6b9d'];
+  for (let i = 0; i < 35; i++) {
     const dot = document.createElement('div');
     dot.className = 'fiesta-confetti';
     dot.style.left = Math.random() * 100 + '%';
     dot.style.top = Math.random() * 100 + '%';
-    dot.style.background = i % 2 === 0 ? '#ffd23f' : '#fff5e1';
+    dot.style.background = colors[i % 3];
     dot.style.animationDelay = Math.random() * 4 + 's';
     overlay.appendChild(dot);
   }
