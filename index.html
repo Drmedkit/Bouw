@@ -269,41 +269,51 @@
   }
 
   .design-features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     margin-top: 8px;
   }
   .design-feature-card {
-    padding: 28px 24px;
-    border-radius: 12px;
-    border: 1px solid rgba(128,128,128,0.15);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(128,128,128,0.12);
     transition: all 0.4s;
   }
+  .design-feature-card:first-child {
+    border-top: 1px solid rgba(128,128,128,0.12);
+  }
   .design-feature-card:hover {
-    border-color: rgba(128,128,128,0.35);
+    padding-left: 8px;
   }
   .design-feature-icon {
     font-family: 'Fira Code', monospace;
-    font-size: 0.75rem;
-    opacity: 0.4;
-    margin-bottom: 16px;
+    font-size: 0.7rem;
+    opacity: 0.35;
     letter-spacing: 0.05em;
+    flex-shrink: 0;
+    width: 24px;
+  }
+  .design-feature-body {
+    flex: 1;
+    min-width: 0;
   }
   .design-feature-title {
     font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    margin-bottom: 4px;
     transition: font-family 0.4s, color 0.4s;
   }
   .design-feature-desc {
-    font-size: 0.88rem;
-    line-height: 1.65;
-    opacity: 0.65;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    opacity: 0.55;
     transition: font-family 0.4s, color 0.4s;
   }
   .design-prompt-wrap {
-    margin-top: 16px;
+    margin-top: 14px;
   }
   .design-prompt-wrap textarea {
     width: 100%; padding: 12px; font-size: 0.85rem; border-radius: 8px;
@@ -336,20 +346,11 @@
     margin-top: 8px; font-size: 0.75rem; font-family: 'Fira Code', monospace;
     opacity: 0.6; min-height: 1.2em;
   }
-  .design-feature-card-prompt {
-    grid-column: 1 / -1;
-  }
 
   @media (max-width: 768px) {
-    .design-features {
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
     .design-feature-card {
-      padding: 22px 20px;
-    }
-    .design-feature-card-prompt {
-      grid-column: auto;
+      padding: 14px 0;
+      gap: 12px;
     }
   }
 
