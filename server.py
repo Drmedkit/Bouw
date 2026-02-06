@@ -51,6 +51,9 @@ def get_gsheet():
     if not sa_json or not GOOGLE_SPREADSHEET_ID:
         return None
     try:
+        sa_json = sa_json.strip()
+        if not sa_json.endswith("}"):
+            sa_json += "}"
         creds_dict = json.loads(sa_json)
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
