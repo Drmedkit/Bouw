@@ -595,33 +595,36 @@
   }
   .demo-nav button:hover { background: rgba(255,255,255,0.2); }
 
-  /* Designer card */
-  #designer textarea {
+  /* Intro prompt */
+  .intro-prompt-wrap {
+    margin-bottom: 18px;
+  }
+  .intro-prompt-wrap textarea {
     width: 100%; padding: 12px; font-size: 0.9rem; border-radius: 8px;
     border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
     color: inherit; font-family: 'Familjen Grotesk', sans-serif;
-    resize: vertical; min-height: 80px; outline: none; transition: border-color 0.3s;
+    resize: vertical; min-height: 60px; outline: none; transition: border-color 0.3s;
   }
-  #designer textarea:focus { border-color: rgba(128,128,128,0.6); }
-  #designer .designer-actions {
-    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  .intro-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.6); }
+  .intro-prompt-wrap .designer-actions {
+    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
   }
-  #designer .designer-actions button {
+  .intro-prompt-wrap .designer-actions button {
     padding: 10px 24px; font-size: 0.85rem; border-radius: 999px;
     border: 1.5px solid currentColor; background: transparent;
     color: inherit; cursor: pointer; font-family: 'Familjen Grotesk', sans-serif;
     font-weight: 600; transition: opacity 0.3s, transform 0.2s;
   }
-  #designer .designer-actions button:hover { opacity: 0.7; }
-  #designer .designer-actions button:active { transform: scale(0.97); }
-  #designer .designer-actions button.primary {
+  .intro-prompt-wrap .designer-actions button:hover { opacity: 0.7; }
+  .intro-prompt-wrap .designer-actions button:active { transform: scale(0.97); }
+  .intro-prompt-wrap .designer-actions button.primary {
     background: currentColor;
   }
-  #designer .designer-actions button.primary span {
+  .intro-prompt-wrap .designer-actions button.primary span {
     mix-blend-mode: difference;
   }
-  #designer .designer-status {
-    margin-top: 12px; font-size: 0.8rem; font-family: 'Fira Code', monospace;
+  .intro-prompt-wrap .designer-status {
+    margin-top: 10px; font-size: 0.8rem; font-family: 'Fira Code', monospace;
     opacity: 0.6; min-height: 1.2em;
   }
 
@@ -676,7 +679,7 @@
   }
 
   /* Hide designer + mockup grid in demo mode */
-  body.demo-active #designer { display: none; }
+  body.demo-active .intro-prompt-wrap { display: none; }
   body.demo-active .mockup-grid { display: none; }
 
   /* Clickable mockup cards */
@@ -981,8 +984,16 @@
   <section id="intro">
     <div class="section-label">tobiasbouw.com</div>
     <h1 class="section-headline">I build websites<br>& automations for small businesses.</h1>
-    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you. Scroll down to explore what I offer.</p>
+    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you — but your website should be <em>yours</em>. Tell me what you're after and I'll design it on the spot.</p>
     <div class="section-detail">
+      <div class="intro-prompt-wrap">
+        <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
+        <div class="designer-actions">
+          <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
+          <button id="ai-reset" onclick="resetDesign()">Reset</button>
+        </div>
+        <div class="designer-status" id="ai-status"></div>
+      </div>
       <div class="tagline">1 project per week · Done in days, not months</div>
     </div>
   </section>
@@ -1053,20 +1064,6 @@
     <h2 class="section-headline">Structure. System. Clarity.</h2>
     <p class="section-body">Every project follows the same proven process. Research what your customers actually need. Design where every element earns its place. Build with clean code that loads fast.</p>
     <div class="section-detail" id="approach-detail"></div>
-  </section>
-
-  <section id="designer">
-    <div class="section-label">Custom Design</div>
-    <h2 class="section-headline">Can't find your vibe?</h2>
-    <p class="section-body">Tell me what you're after and I'll design it on the spot. Type a mood, a reference, or just a feeling — and watch the page transform.</p>
-    <div class="section-detail">
-      <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
-      <div class="designer-actions">
-        <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
-        <button id="ai-reset" onclick="resetDesign()">Reset</button>
-      </div>
-      <div class="designer-status" id="ai-status"></div>
-    </div>
   </section>
 
   <section id="cta">
