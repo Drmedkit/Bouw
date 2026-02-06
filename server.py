@@ -89,8 +89,8 @@ CONVERSATION FLOW — Ask questions in this order (one at a time):
 
 PHASE 1 — Core requirements (ask these FIRST):
 1. business: Their business name ("What's your business called?")
-2. type: Business category (Restaurant, Nightclub / Bar, Online Store, or Other)
-   - Ask: "What type of business is it? Restaurant, bar, online store, or something else?"
+2. type: Business category — accept whatever they say (restaurant, trades, consulting, etc.)
+   - Ask: "What type of business is it?"
 3. vibe: Design preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
    - Ask: "Which style direction fits? Warm & elegant, dark & bold, clean & minimal, loud & electric, playful & fun, or raw & edgy?"
    - If they're unsure: "Dark & bold works well for bars. Clean & minimal suits professional services."
@@ -134,8 +134,13 @@ CRITICAL RULES:
 - Professional acknowledgments only
 - After getting email, continue gathering optional details
 - Don't mention background processes
+- READ THE CONVERSATION HISTORY. If the user already said their business name, DO NOT ask again. Extract data from what they already told you.
+- READ THE LEAD SUMMARY below. Any field listed there is DONE. Move to the next empty field.
+- Always populate the lead JSON with everything you know from the conversation so far
 
 {context_block}
+
+{lead_summary}
 
 Your response must ALWAYS be valid JSON with this structure:
 {{
@@ -145,7 +150,7 @@ Your response must ALWAYS be valid JSON with this structure:
     "email": "their email or empty string",
     "phone": "their phone number or empty string",
     "business": "business name or empty string",
-    "type": "Restaurant|Nightclub / Bar|Online Store|Other or empty string",
+    "type": "their business type as they described it, or empty string",
     "vibe": "Warm & Elegant|Dark & Bold|Clean & Minimal|Loud & Electric|Playful & Fun|Raw & Edgy or empty string",
     "tagline": "their tagline or empty string",
     "colors": "preferred colors or empty string",
@@ -314,16 +319,29 @@ def build_context_block(context):
     return "\n".join(parts)
 
 
+def build_lead_summary(lead_context):
+    if not lead_context:
+        return ""
+    collected = {k: v for k, v in lead_context.items() if v}
+    if not collected:
+        return ""
+    lines = ["ALREADY COLLECTED (do NOT ask for these again):"]
+    for k, v in collected.items():
+        lines.append(f"- {k}: {v}")
+    lines.append("Skip these fields and ask for the NEXT missing field in the conversation flow.")
+    return "\n".join(lines)
+
+
 def call_chat_model(api_messages, lead_context, visitor_context=None):
     context_block = build_context_block(visitor_context)
-    system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block)
+    lead_summary = build_lead_summary(lead_context)
+    system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block, lead_summary=lead_summary)
+
+    full_messages = [{"role": "system", "content": system_prompt}, *api_messages]
 
     response = xai_client.chat.completions.create(
         model=CHAT_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            *api_messages,
-        ],
+        messages=full_messages,
         max_tokens=1024,
     )
     raw = response.choices[0].message.content or ""
@@ -331,7 +349,11 @@ def call_chat_model(api_messages, lead_context, visitor_context=None):
     raw = re.sub(r"^```(?:json)?\s*", "", raw)
     raw = re.sub(r"\s*```$", "", raw)
 
-    result = json.loads(raw)
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        print(f"[chat] AI returned non-JSON, wrapping as reply")
+        result = {"reply": raw, "lead": lead_context or {}}
 
     lead_defaults = {
         "name": "", "email": "", "phone": "", "business": "", "type": "", "vibe": "",
@@ -348,10 +370,6 @@ def call_chat_model(api_messages, lead_context, visitor_context=None):
     for k, v in lead_defaults.items():
         if k not in lead or not isinstance(lead.get(k), str):
             lead[k] = v
-
-    VALID_TYPES = {"Restaurant", "Nightclub / Bar", "Online Store", "Other", ""}
-    if lead.get("type", "") not in VALID_TYPES:
-        lead["type"] = "Other"
 
     VALID_VIBES = {"Warm & Elegant", "Dark & Bold", "Clean & Minimal", "Loud & Electric", "Playful & Fun", "Raw & Edgy", ""}
     if lead.get("vibe", "") not in VALID_VIBES:
@@ -444,7 +462,7 @@ def api_chat():
 
     if not api_messages:
         context_block = build_context_block(visitor_context)
-        system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block)
+        system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block, lead_summary="")
         try:
             response = xai_client.chat.completions.create(
                 model=CHAT_MODEL,
@@ -470,12 +488,6 @@ def api_chat():
 
     try:
         result, lead = call_chat_model(api_messages, lead_context, visitor_context)
-    except json.JSONDecodeError:
-        return jsonify({
-            "reply": "What's your business name?",
-            "lead": lead_context or empty_lead,
-            "buildTriggered": False,
-        })
     except Exception as e:
         error_msg = str(e)
         print(f"[chat] Error: {error_msg}")

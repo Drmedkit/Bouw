@@ -2466,6 +2466,8 @@ function chatOpen(entryPoint) {
     }
 
     chatState = 'ACTIVE';
+    chatHistory.length = 0;
+    Object.keys(chatLead).forEach(k => chatLead[k] = '');
     fsChatScroll.innerHTML = '';
     fsChatQR.innerHTML = '';
     fsChatInputBar.classList.remove('hidden');
