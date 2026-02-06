@@ -19,6 +19,7 @@ xai_client = OpenAI(
 CHAT_MODEL = "grok-4-1-fast-non-reasoning"
 BUILD_MODEL = "grok-4-1-fast"
 DESIGN_MODEL = "grok-4-1-fast-non-reasoning"
+IMAGE_MODEL = "grok-2-image"
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -179,7 +180,7 @@ Features: {features}
 Create a complete HTML page (<!DOCTYPE html> through </html>) that:
 - Is FULLY self-contained with ALL CSS inline in a <style> tag
 - Uses Google Fonts loaded via CDN <link> tags
-- Has a stunning hero section with a relevant Unsplash background image (use ?w=1200&h=800&fit=crop)
+- Has a stunning hero section with a background image (use provided custom images if available, otherwise Unsplash with ?w=1200&h=800&fit=crop)
 - Has at least 4 distinct sections (hero, about/services, features/menu, CTA)
 - Is fully mobile-responsive
 - Matches the requested vibe perfectly
@@ -253,8 +254,50 @@ def save_lead_to_db(job_id, lead, status="building", page_html=None, entry_conte
         print(f"[db] Error saving lead: {e}")
 
 
+def generate_images_for_page(lead):
+    business = lead.get("business", "Business")
+    biz_type = lead.get("type", "business")
+    vibe = lead.get("vibe", "modern")
+    services = lead.get("services", "")
+    tagline = lead.get("tagline", "")
+
+    hero_prompt = f"Professional hero banner photo for a {biz_type} business called '{business}'. Style: {vibe}. {f'They offer: {services}.' if services else ''} High quality, wide landscape format, perfect for a website hero section. No text or logos in the image."
+    secondary_prompt = f"Professional photo for a {biz_type} business website. {f'Showing: {services}.' if services else f'Style: {vibe}.'} Authentic, editorial quality. No text or logos."
+
+    images = {}
+    for key, prompt in [("hero", hero_prompt), ("secondary", secondary_prompt)]:
+        try:
+            response = xai_client.images.generate(
+                model=IMAGE_MODEL,
+                prompt=prompt,
+                n=1,
+                response_format="url",
+            )
+            url = response.data[0].url
+            if url:
+                images[key] = url
+                print(f"[images] Generated {key} image for {business}")
+        except Exception as e:
+            print(f"[images] Failed to generate {key} image: {e}")
+
+    return images
+
+
 def build_page_in_background(job_id, lead):
     try:
+        images = generate_images_for_page(lead)
+        hero_img = images.get("hero", "")
+        secondary_img = images.get("secondary", "")
+
+        image_instructions = ""
+        if hero_img or secondary_img:
+            image_instructions = "\n\nCUSTOM IMAGES (use these exact URLs, do NOT use Unsplash):"
+            if hero_img:
+                image_instructions += f"\n- Hero/banner image: {hero_img}"
+            if secondary_img:
+                image_instructions += f"\n- Secondary/about section image: {secondary_img}"
+            image_instructions += "\nUse these images with <img> tags or as CSS background-image url() values. They are the real images for this business."
+
         prompt = PAGE_BUILD_PROMPT.format(
             business=lead.get("business", "Business"),
             type=lead.get("type", "Other"),
@@ -266,7 +309,7 @@ def build_page_in_background(job_id, lead):
             services=lead.get("services", ""),
             audience=lead.get("audience", ""),
             features=lead.get("features", ""),
-        )
+        ) + image_instructions
 
         response = xai_client.chat.completions.create(
             model=BUILD_MODEL,

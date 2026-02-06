@@ -2572,7 +2572,7 @@ async function sendToAI(text) {
           const fallbackPage = buildFallbackPage();
           handlePreviewReady(fallbackPage);
         }
-      }, 30000);  // 30 second timeout
+      }, 90000);  // 90 second timeout (images + page build)
 
       checkPreviewReadiness();
     }
