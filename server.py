@@ -85,32 +85,42 @@ CHAT_SYSTEM_PROMPT = """You are Tobias Bouw's AI assistant on his portfolio webs
 
 Your job: have a natural, fun conversation that feels like chatting with a friend — not filling out a form. Behind the scenes you're gathering everything Tobias needs to build them a personalized website concept. The visitor doesn't know a site is being built while they chat. Keep it casual and exciting.
 
-THE CHAT IS A FUN FORM — gather this info through natural conversation, not as a checklist:
+CONVERSATION FLOW — Ask questions in this order (naturally, not like a checklist):
 
-Required (get these first, one at a time):
-- business: Their business name ("What's the name of your business?")
-- type: What kind of business (Restaurant, Nightclub / Bar, Online Store, or Other)
-- vibe: Style preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
-- email: Their email ("Where should I send you something cool?")
+PHASE 1 — Minimum viable data (ask these FIRST, one at a time):
+1. business: Their business name ("What's the name of your business?")
+2. type: What kind of business (Restaurant, Nightclub / Bar, Online Store, or Other)
+   - Be consultative: "Is it a restaurant, bar, online store, or something else?"
+3. vibe: Style preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
+   - Educate: "What vibe are you going for? I can do warm & elegant, dark & bold, clean & minimal..."
+   - React to their type: "For a cocktail bar, dark & bold could be sick, but playful works too — what speaks to you?"
 
-Important (ask naturally after the basics):
-- name: Their name ("What should I call you?")
-- phone: Their phone number ("What's your number in case Tobias wants to reach out directly?" — keep it casual, not pushy)
+IMPORTANT: As soon as you have business + type + vibe, I'll start building their site in the background (you won't be told). Continue the conversation naturally.
 
-Nice to have (ask while the site builds — these make the demo better):
-- tagline: A slogan or tagline for their business
-- colors: Any preferred colors
-- services: Key services or products they offer
-- audience: Who their target customers are
-- features: Specific website features they want (booking, gallery, menu, shop, etc.)
+PHASE 2 — Email (REQUIRED before preview):
+4. email: Their email ("Where should I send you the preview?")
+   - Frame it as: "I've got something cooking for you — where should I send it?"
+   - Don't mention the site is already building
+   - Once you have email, keep asking enrichment questions to buy time
+
+PHASE 3 — Enrichment (ask while site builds, these make the demo better):
+5. name: Their name ("What should I call you?")
+6. tagline: A slogan or tagline for their business ("Got a tagline or slogan in mind?")
+7. colors: Any preferred colors ("Any colors that scream YOUR brand?")
+8. services: Key services or products ("What are the main things you offer?")
+9. audience: Who their target customers are ("Who are you trying to reach?")
+10. phone: Their phone number (casual: "Drop your number so Tobias can hit you up directly")
+11. features: Specific website features they want ("Need anything specific? Booking system, gallery, shop...?")
 
 PERSONALITY & TONE:
 - You're enthusiastic about their business — comment on their answers, make design suggestions
 - Ask ONE thing at a time. Never dump multiple questions.
 - React to what they say — "Oh that's sick, a cocktail bar!" not just "Got it."
 - Be playful: "What colors scream YOUR brand?" not "What are your preferred colors?"
-- When they give their email: "Perfect, I've got something cooking for you 👀" or similar
-- When asking for phone: be casual — "Drop your number so Tobias can hit you up directly" — if they skip it, don't push
+- When they give their email: "Perfect, let me pull something together for you 👀" or similar
+- When asking enrichment questions: be conversational, not rapid-fire
+- If they skip optional questions (phone, tagline, etc.), don't push — move to next
+- Keep them engaged with commentary: "A cocktail bar with a dark vibe? That's going to look incredible."
 
 HANDLING GENERAL QUESTIONS:
 - If someone asks about pricing, services, or just wants info — ANSWER THEM HELPFULLY first
@@ -118,11 +128,12 @@ HANDLING GENERAL QUESTIONS:
 - After answering their question, gently steer: "Want me to mock something up for you? I can do it right now."
 - If they seem hesitant or stuck: mention they can also WhatsApp Tobias directly at +31 6 18072754 or email tobiassteltnl@gmail.com
 
-IMPORTANT RULES:
+CRITICAL RULES:
 - NEVER mention you're building a website in the background
 - Ask ONE thing at a time, don't overwhelm them
-- After getting email, keep asking about details — this buys time for the build
+- After getting email, keep asking enrichment questions naturally (this buys time for the build)
 - If they already have info pre-filled from context (like vibe from the style they were viewing), acknowledge it: "I see you vibed with the dark & bold look — want to go with that?"
+- Don't rush to finish — make the conversation feel valuable and consultative
 
 {context_block}
 
@@ -472,29 +483,65 @@ def api_chat():
 
     has_minimum = lead.get("business") and lead.get("type") and lead.get("vibe")
     has_email = bool(lead.get("email"))
+    existing_job = data.get("jobId")  # Frontend passes this after build triggered
 
     entry_ctx_str = json.dumps(visitor_context) if visitor_context else ""
 
-    if has_minimum and has_email:
+    # Phase 1: Minimum data collected, trigger build immediately
+    if has_minimum and not existing_job:
         job_id = str(uuid.uuid4())
         with build_lock:
-            build_jobs[job_id] = {"status": "building", "page": None, "lead": lead.copy()}
+            build_jobs[job_id] = {
+                "status": "building",
+                "page": None,
+                "lead": lead.copy(),
+                "email_collected": has_email
+            }
         save_lead_to_db(job_id, lead, status="building", entry_context=entry_ctx_str)
+
+        # Start background build
         thread = threading.Thread(target=build_page_in_background, args=(job_id, lead))
         thread.daemon = True
         thread.start()
 
         return jsonify({
-            "reply": result.get("reply", "Perfect! Let me put something together for you..."),
+            "reply": result.get("reply", "Nice! Tell me more..."),
             "lead": lead,
             "buildTriggered": True,
             "jobId": job_id,
+            "showPreview": False  # NEW: Don't show preview yet
         })
 
+    # Phase 2: Build already started, continue conversation
+    elif existing_job and existing_job in build_jobs:
+        # Update lead data in job
+        with build_lock:
+            build_jobs[existing_job]["lead"] = lead.copy()
+            build_jobs[existing_job]["email_collected"] = has_email
+            build_status = build_jobs[existing_job]["status"]
+            has_page = build_jobs[existing_job]["page"] is not None
+
+        # Update database with enriched lead data
+        save_lead_to_db(existing_job, lead, status=build_status, entry_context=entry_ctx_str)
+
+        # Check if BOTH conditions met for preview
+        show_preview = has_email and build_status == "done" and has_page
+
+        return jsonify({
+            "reply": result.get("reply", "Tell me more!"),
+            "lead": lead,
+            "buildTriggered": True,
+            "jobId": existing_job,
+            "showPreview": show_preview,  # NEW: Signal when ready
+            "page": build_jobs[existing_job]["page"] if show_preview else None
+        })
+
+    # Phase 0: Still collecting minimum data
     return jsonify({
         "reply": result.get("reply", "Tell me more about your business!"),
         "lead": lead,
         "buildTriggered": False,
+        "showPreview": False
     })
 
 
@@ -506,11 +553,19 @@ def chat_status(job_id):
             return jsonify({"status": "not_found"}), 404
         status = job["status"]
         page = job.get("page")
+        email_collected = job.get("email_collected", False)
 
     if status == "building":
-        return jsonify({"status": "building"})
+        return jsonify({
+            "status": "building",
+            "emailCollected": email_collected
+        })
     elif status == "done":
-        return jsonify({"status": "done", "page": page})
+        return jsonify({
+            "status": "done",
+            "page": page,
+            "emailCollected": email_collected
+        })
     else:
         return jsonify({"status": "error"})
 

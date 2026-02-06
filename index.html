@@ -2361,6 +2361,14 @@ let currentJobId = null;
 let buildPolling = null;
 let chatContext = {};
 
+// NEW STATE VARIABLES for parallel workflow
+let buildStarted = false;        // Track if build was triggered
+let emailCollected = false;      // Track if email was provided
+let designReady = false;         // Track if design is complete
+let cachedPageHtml = null;       // Store page HTML when design finishes first
+let pollingFailures = 0;         // Track network failures
+const MAX_POLLING_FAILURES = 5;
+
 // Vibe → style theme mapping (fallback mode)
 const vibeStyleMap = {
   'Warm & Elegant': 'Haute Couture',
@@ -2445,6 +2453,18 @@ function chatOpen(entryPoint) {
 
   fsChat.classList.add('open');
   if (chatState === 'IDLE') {
+    // RESET STATE VARIABLES for new session
+    buildStarted = false;
+    emailCollected = false;
+    designReady = false;
+    cachedPageHtml = null;
+    currentJobId = null;
+    pollingFailures = 0;
+    if (buildPolling) {
+      clearInterval(buildPolling);
+      buildPolling = null;
+    }
+
     chatState = 'ACTIVE';
     fsChatScroll.innerHTML = '';
     fsChatQR.innerHTML = '';
@@ -2475,6 +2495,12 @@ function chatOpen(entryPoint) {
 
 function chatClose() {
   fsChat.classList.remove('open');
+
+  // Clean up polling if still active
+  if (buildPolling) {
+    clearInterval(buildPolling);
+    buildPolling = null;
+  }
 }
 
 function chatSend() {
@@ -2497,81 +2523,196 @@ fsChatInput.addEventListener('keydown', e => {
 // ── AI Mode ──
 async function sendToAI(text) {
   showTyping();
-  const endpoint = currentJobId ? '/api/chat/continue' : '/api/chat';
+
+  // Choose endpoint: always /api/chat, include jobId in payload if build started
+  const endpoint = '/api/chat';
+
+  const payload = {
+    messages: chatHistory,
+    lead: chatLead,
+    context: chatContext
+  };
+
+  // Include jobId if build already started
+  if (buildStarted && currentJobId) {
+    payload.jobId = currentJobId;
+  }
+
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, lead: chatLead, context: chatContext })
+      body: JSON.stringify(payload)
     });
+
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
     hideTyping();
 
     if (data.reply) addMsg('bot', data.reply);
+
+    // Update lead data
     if (data.lead) {
       for (const k in data.lead) {
         if (data.lead[k]) chatLead[k] = data.lead[k];
       }
     }
 
-    if (data.buildTriggered && data.jobId) {
-      currentJobId = data.jobId;
-      startBuildPolling(data.jobId);
+    // Track email collection
+    if (chatLead.email && !emailCollected) {
+      emailCollected = true;
+      console.log('[Chat] Email collected');
+
+      // Set timeout to prevent infinite waiting
+      setTimeout(() => {
+        if (!designReady && emailCollected) {
+          console.warn('[Chat] Design timeout, using fallback');
+          const fallbackPage = buildFallbackPage();
+          handlePreviewReady(fallbackPage);
+        }
+      }, 30000);  // 30 second timeout
+
+      checkPreviewReadiness();
     }
+
+    // Handle build trigger (first time only)
+    if (data.buildTriggered && data.jobId && !buildStarted) {
+      buildStarted = true;
+      currentJobId = data.jobId;
+      console.log('[Chat] Build started silently:', currentJobId);
+      startSilentBuildPolling(currentJobId);
+    }
+
+    // Check if backend says preview is ready
+    if (data.showPreview && data.page) {
+      handlePreviewReady(data.page);
+    }
+
   } catch (e) {
     hideTyping();
+    console.error('[Chat] Error:', e);
+    // Fallback to deterministic mode
     useAI = false;
     chatState = 'ASKING_NAME';
     addMsg('bot', 'Let me switch to quick mode. What\'s your name?');
   }
 }
 
-function startBuildPolling(jobId) {
+function startSilentBuildPolling(jobId) {
   if (buildPolling) clearInterval(buildPolling);
+
+  console.log('[Chat] Starting silent polling for job:', jobId);
+  pollingFailures = 0;
+
   buildPolling = setInterval(async () => {
     try {
       const res = await fetch('/api/chat/status/' + jobId);
-      if (!res.ok) return;
+      if (!res.ok) {
+        pollingFailures++;
+        if (pollingFailures >= MAX_POLLING_FAILURES) {
+          console.error('[Chat] Too many polling failures');
+          clearInterval(buildPolling);
+          buildPolling = null;
+          // Use fallback when email collected
+          if (emailCollected) {
+            const fallbackPage = buildFallbackPage();
+            handlePreviewReady(fallbackPage);
+          }
+        }
+        return;
+      }
+
+      pollingFailures = 0;
       const data = await res.json();
+
       if (data.status === 'done' && data.page) {
+        console.log('[Chat] Design ready');
+        designReady = true;
+        cachedPageHtml = data.page;
+
         clearInterval(buildPolling);
         buildPolling = null;
-        chatState = 'DEMO';
-        localStorage.setItem('tbouw_preview_page', data.page);
 
-        await botSay('Your website preview is ready! Take a look...', 500);
+        checkPreviewReadiness();
 
-        fsChatProgress.classList.add('active');
-        fcProgressFill.style.width = '0%';
-        fcProgressText.textContent = 'Loading preview...';
-        const steps = [
-          { pct: 30, text: 'Rendering design...' },
-          { pct: 60, text: 'Applying ' + (chatLead.vibe || 'your') + ' style...' },
-          { pct: 90, text: 'Personalizing for ' + (chatLead.business || 'you') + '...' },
-          { pct: 100, text: 'Done!' }
-        ];
-        steps.forEach((step, i) => {
-          setTimeout(() => {
-            fcProgressFill.style.width = step.pct + '%';
-            fcProgressText.textContent = step.text;
-            if (step.pct === 100) {
-              setTimeout(() => {
-                fsChatProgress.classList.remove('active');
-                chatClose();
-                showIframeDemo(data.page, chatLead.business || 'Your site');
-              }, 400);
-            }
-          }, (i + 1) * 400);
-        });
       } else if (data.status === 'error') {
+        console.error('[Chat] Build failed');
         clearInterval(buildPolling);
         buildPolling = null;
+        designReady = false;
+
+        // Wait 3 seconds, then use fallback if email collected
+        if (emailCollected) {
+          setTimeout(() => {
+            if (!designReady) {
+              const fallbackPage = buildFallbackPage();
+              handlePreviewReady(fallbackPage);
+            }
+          }, 3000);
+        }
       }
     } catch (e) {
-      // keep polling
+      pollingFailures++;
+      console.error('[Chat] Polling error:', e);
     }
   }, 2000);
+}
+
+function checkPreviewReadiness() {
+  console.log('[Chat] Checking readiness:', {
+    emailCollected,
+    designReady,
+    hasPage: !!cachedPageHtml
+  });
+
+  // Both conditions must be met
+  if (emailCollected && designReady && cachedPageHtml) {
+    console.log('[Chat] Both conditions met, showing preview');
+    handlePreviewReady(cachedPageHtml);
+  } else if (emailCollected && !designReady) {
+    console.log('[Chat] Email collected, waiting for design (silent)');
+  } else if (designReady && !emailCollected) {
+    console.log('[Chat] Design ready, waiting for email');
+  }
+}
+
+async function handlePreviewReady(pageHtml) {
+  if (buildPolling) {
+    clearInterval(buildPolling);
+    buildPolling = null;
+  }
+
+  chatState = 'DEMO';
+  localStorage.setItem('tbouw_preview_page', pageHtml);
+
+  await botSay('Your website preview is ready! Take a look...', 500);
+
+  // Show progress animation
+  fsChatProgress.classList.add('active');
+  fcProgressFill.style.width = '0%';
+  fcProgressText.textContent = 'Loading preview...';
+
+  const steps = [
+    { pct: 30, text: 'Rendering design...' },
+    { pct: 60, text: 'Applying ' + (chatLead.vibe || 'your') + ' style...' },
+    { pct: 90, text: 'Personalizing for ' + (chatLead.business || 'you') + '...' },
+    { pct: 100, text: 'Done!' }
+  ];
+
+  steps.forEach((step, i) => {
+    setTimeout(() => {
+      fcProgressFill.style.width = step.pct + '%';
+      fcProgressText.textContent = step.text;
+
+      if (step.pct === 100) {
+        setTimeout(() => {
+          fsChatProgress.classList.remove('active');
+          chatClose();
+          showIframeDemo(pageHtml, chatLead.business || 'Your site');
+        }, 400);
+      }
+    }, (i + 1) * 400);
+  });
 }
 
 // ── Fallback (deterministic) Mode ──
