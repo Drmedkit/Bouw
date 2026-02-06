@@ -805,5 +805,49 @@ def api_leads():
         return jsonify({"error": "Failed to fetch leads"}), 500
 
 
+@app.route("/api/faq", methods=["POST"])
+def api_faq():
+    data = request.get_json(silent=True) or {}
+    question = data.get("question", "").strip()
+
+    if not question:
+        return jsonify({"error": "Question is required"}), 400
+
+    # Load context from markdown file
+    try:
+        with open("context.md", "r", encoding="utf-8") as f:
+            context = f.read()
+    except FileNotFoundError:
+        context = "I'm Tobias Bouw, a web designer. I build custom websites in 5-7 days. Contact me via WhatsApp (+31 6 18072754) or email (tobiassteltnl@gmail.com)."
+
+    # Build prompt for AI
+    system_prompt = f"""You are Tobias Bouw's FAQ assistant. Answer questions about his web design services based on this context:
+
+{context}
+
+Rules:
+- Answer in 2-3 sentences maximum
+- Be direct and professional
+- If you don't know, say "Contact me via WhatsApp or email for details"
+- Don't make up pricing or timelines not in the context
+- Keep answers brief and actionable"""
+
+    try:
+        response = xai_client.chat.completions.create(
+            model=CHAT_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question}
+            ],
+            max_tokens=200,
+            temperature=0.7
+        )
+        answer = response.choices[0].message.content.strip()
+        return jsonify({"answer": answer})
+    except Exception as e:
+        print(f"[faq] Error: {e}")
+        return jsonify({"answer": "I couldn't process that. Try WhatsApp (+31 6 18072754) or email (tobiassteltnl@gmail.com) instead."}), 200
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

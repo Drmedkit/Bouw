@@ -1107,6 +1107,179 @@
   }
   #lead-capture-cta:hover { filter: brightness(1.1); }
   #lead-capture-cta:active { transform: translateX(-50%) scale(0.96); }
+
+  /* CTA Options */
+  .cta-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+  }
+  .cta-option {
+    padding: 32px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.02);
+    transition: all 0.3s;
+  }
+  .cta-option:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.04);
+  }
+  .cta-option h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+  }
+  .cta-option p {
+    opacity: 0.6;
+    font-size: 0.9rem;
+    margin: 0 0 20px 0;
+  }
+  .cta-option input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    transition: border-color 0.3s;
+  }
+  .cta-option input:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.3);
+  }
+  .cta-option button, .cta-option a button {
+    width: 100%;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    color: inherit;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .cta-option button:hover, .cta-option a button:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+  }
+  .cta-option a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* FAQ Section */
+  #faq {
+    margin-top: 120px;
+  }
+  .faq-input-container {
+    display: flex;
+    gap: 12px;
+    margin: 32px 0;
+    max-width: 600px;
+  }
+  #faq-input {
+    flex: 1;
+    padding: 14px 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    color: inherit;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+  }
+  #faq-input:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.3);
+  }
+  #faq-send {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #faq-send:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+  }
+  #faq-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 800px;
+  }
+  .faq-answer {
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.02);
+    animation: slideIn 0.4s cubic-bezier(0.2, 0, 0, 1);
+    position: relative;
+  }
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .faq-answer.fade-out {
+    animation: fadeOut 0.3s forwards;
+  }
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  .faq-question {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 0 12px 0;
+    opacity: 0.8;
+  }
+  .faq-response {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.7;
+  }
+  .faq-feedback {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.85rem;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .cta-options {
+      grid-template-columns: 1fr;
+    }
+    .faq-input-container {
+      max-width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1232,8 +1405,37 @@
     <h2 class="section-headline">Ready to build yours?</h2>
     <p class="section-body">Whether you need a landing page, booking system, or automations that save you hours every week — let's make it happen. I take on one project per week. If you're ready, let's talk.</p>
     <div class="section-detail">
-      <button class="cta-button" id="cta-button" onclick="chatOpen('cta')" style="display:inline-block;margin-top:8px;padding:14px 32px;border:none;border-radius:999px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:transform 0.3s">Let's build yours →</button>
+      <div class="cta-options">
+        <div class="cta-option">
+          <h3>Leave your email</h3>
+          <p>I'll reach out within 24h</p>
+          <input type="email" id="cta-email-input" placeholder="your@email.com">
+          <button onclick="submitEmail()">Send →</button>
+        </div>
+        <div class="cta-option">
+          <h3>WhatsApp me</h3>
+          <p>Direct message</p>
+          <a href="https://wa.me/31618072754?text=Hey%20Tobias%2C%20I%20want%20to%20build%20a%20website" target="_blank" rel="noopener">
+            <button>Open WhatsApp →</button>
+          </a>
+        </div>
+        <div class="cta-option">
+          <h3>Email me</h3>
+          <p>tobiassteltnl@gmail.com</p>
+          <button onclick="copyEmail()">Copy email →</button>
+        </div>
+      </div>
     </div>
+  </section>
+
+  <section id="faq">
+    <div class="section-label">Questions?</div>
+    <h2 class="section-headline">Ask me anything.</h2>
+    <div class="faq-input-container">
+      <input type="text" id="faq-input" placeholder="What's your question?">
+      <button id="faq-send" onclick="askQuestion()">→</button>
+    </div>
+    <div id="faq-answers"></div>
   </section>
 </main>
 </div>
@@ -1260,34 +1462,6 @@
 </div>
 
 <div id="style-toast">Default</div>
-
-<div id="fs-chat">
-  <button id="fs-chat-close" onclick="chatClose()">&times;</button>
-  <div id="fs-chat-contact-bar">
-    <a id="fs-chat-wa" href="https://wa.me/31618072754?text=Hey%20Tobias%2C%20I%20checked%20out%20your%20portfolio%20and%20I%27m%20interested!" target="_blank" rel="noopener">WhatsApp Tobias</a>
-    <a id="fs-chat-email" href="mailto:tobiassteltnl@gmail.com?subject=Website%20Inquiry&body=Hey%20Tobias%2C%20I%20saw%20your%20portfolio%20and%20I%27m%20interested!" target="_blank" rel="noopener">Email instead</a>
-  </div>
-  <div id="fs-chat-scroll"></div>
-  <div id="fs-chat-qr"></div>
-  <div id="fs-chat-progress">
-    <div class="fc-progress-bar"><div class="fc-progress-fill" id="fc-progress-fill"></div></div>
-    <div class="fc-progress-text" id="fc-progress-text"></div>
-  </div>
-  <div id="fs-chat-input-bar">
-    <input type="text" id="fs-chat-input" placeholder="Type here..." autocomplete="off">
-    <button id="fs-chat-send" onclick="chatSend()">→</button>
-  </div>
-</div>
-
-<div id="demo-iframe-wrap">
-  <div id="demo-iframe-bar">
-    <span id="demo-iframe-label">Preview</span>
-    <button onclick="closeIframeDemo()">← Back to portfolio</button>
-  </div>
-  <iframe id="demo-iframe-frame" sandbox="allow-scripts allow-same-origin"></iframe>
-</div>
-
-<button id="lead-capture-cta" onclick="saveLead()">Love it? Let's talk →</button>
 
 <script>
 window.onerror = function(msg, url, line, col, err) {
@@ -3087,6 +3261,131 @@ function saveLead() {
 function applyChatStyles() {
   // no-op now — chat has its own fixed dark theme
 }
+
+// ── CTA Functions ──
+function submitEmail() {
+  const emailInput = document.getElementById('cta-email-input');
+  const email = emailInput.value.trim();
+
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid email address');
+    return;
+  }
+
+  // Save to localStorage
+  const leads = JSON.parse(localStorage.getItem('tbouw_leads') || '[]');
+  leads.push({
+    email: email,
+    timestamp: new Date().toISOString(),
+    source: 'cta'
+  });
+  localStorage.setItem('tbouw_leads', JSON.stringify(leads));
+
+  // Show success
+  emailInput.value = '';
+  emailInput.placeholder = 'Thanks! I\'ll reach out soon.';
+  setTimeout(() => {
+    emailInput.placeholder = 'your@email.com';
+  }, 3000);
+}
+
+function copyEmail() {
+  const email = 'tobiassteltnl@gmail.com';
+  navigator.clipboard.writeText(email).then(() => {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = 'Copied! ✓';
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 2000);
+  });
+}
+
+// ── FAQ Functions ──
+const faqAnswers = [];
+const MAX_FAQ_BOXES = 5;
+
+async function askQuestion() {
+  const input = document.getElementById('faq-input');
+  const question = input.value.trim();
+
+  if (!question) return;
+
+  input.value = '';
+  input.disabled = true;
+
+  try {
+    const res = await fetch('/api/faq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+
+    addFAQAnswer(question, data.answer);
+
+  } catch (e) {
+    console.error('FAQ error:', e);
+    addFAQAnswer(question, 'Sorry, I couldn\'t process that. Try WhatsApp or email instead.');
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+function addFAQAnswer(question, answer) {
+  const container = document.getElementById('faq-answers');
+
+  // Remove oldest if we have 5
+  if (faqAnswers.length >= MAX_FAQ_BOXES) {
+    const oldestId = faqAnswers.shift();
+    const oldestEl = document.getElementById(oldestId);
+    if (oldestEl) {
+      oldestEl.classList.add('fade-out');
+      setTimeout(() => oldestEl.remove(), 300);
+    }
+  }
+
+  // Create new answer box
+  const id = 'faq-' + Date.now();
+  const box = document.createElement('div');
+  box.className = 'faq-answer';
+  box.id = id;
+  box.innerHTML = `
+    <div class="faq-question">${escapeHTML(question)}</div>
+    <div class="faq-response">${escapeHTML(answer)}</div>
+    <div class="faq-feedback">✓ Helpful?</div>
+  `;
+
+  // Add to top
+  container.insertBefore(box, container.firstChild);
+  faqAnswers.push(id);
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  const faqInput = document.getElementById('faq-input');
+  if (faqInput) {
+    faqInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') askQuestion();
+    });
+  }
+
+  const ctaEmailInput = document.getElementById('cta-email-input');
+  if (ctaEmailInput) {
+    ctaEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') submitEmail();
+    });
+  }
+});
 
 
 </script>
