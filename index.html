@@ -303,6 +303,42 @@
     opacity: 0.65;
     transition: font-family 0.4s, color 0.4s;
   }
+  .design-prompt-wrap {
+    margin-top: 16px;
+  }
+  .design-prompt-wrap textarea {
+    width: 100%; padding: 12px; font-size: 0.85rem; border-radius: 8px;
+    border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
+    color: inherit; font-family: 'Familjen Grotesk', sans-serif;
+    resize: vertical; min-height: 56px; outline: none; transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+  .design-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.6); }
+  .design-prompt-wrap .designer-actions {
+    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .design-prompt-wrap .designer-actions button {
+    padding: 8px 20px; font-size: 0.8rem; border-radius: 999px;
+    border: 1.5px solid currentColor; background: transparent;
+    color: inherit; cursor: pointer; font-family: 'Familjen Grotesk', sans-serif;
+    font-weight: 600; transition: opacity 0.3s, transform 0.2s;
+  }
+  .design-prompt-wrap .designer-actions button:hover { opacity: 0.7; }
+  .design-prompt-wrap .designer-actions button:active { transform: scale(0.97); }
+  .design-prompt-wrap .designer-actions button.primary {
+    background: currentColor;
+  }
+  .design-prompt-wrap .designer-actions button.primary span {
+    mix-blend-mode: difference;
+  }
+  .design-prompt-wrap .designer-status {
+    margin-top: 8px; font-size: 0.75rem; font-family: 'Fira Code', monospace;
+    opacity: 0.6; min-height: 1.2em;
+  }
+  .design-feature-card-prompt {
+    grid-column: 1 / -1;
+  }
+
   @media (max-width: 768px) {
     .design-features {
       grid-template-columns: 1fr;
@@ -310,6 +346,9 @@
     }
     .design-feature-card {
       padding: 22px 20px;
+    }
+    .design-feature-card-prompt {
+      grid-column: auto;
     }
   }
 
@@ -1080,12 +1119,9 @@
 
 <main id="content">
   <section id="intro">
-    <div class="section-label">tobiasbouw.com</div>
+    <div class="section-label">Welcome</div>
     <h1 class="section-headline">I build websites<br>& automations for small businesses.</h1>
-    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you — but your website should be <em>yours</em>.</p>
-    <div class="section-detail">
-      <div class="tagline">1 project per week · Done in days, not months</div>
-    </div>
+    <p class="section-body"><span class="intro-mobile">Swipe left or right and see how the entire page transforms.</span><span class="intro-desktop">Click the styles on the right and see how the entire page transforms.</span> Websites should be fun — they're <em>yours</em>. I take on one project per week, but am done in days, not months.</p>
   </section>
 
   <section id="websites">
@@ -1136,13 +1172,21 @@
   <section id="design">
     <div class="section-label">Design</div>
     <h2 class="section-headline">No templates. No limitations.</h2>
-    <p class="section-body">Every site is designed from scratch for your business. No drag-and-drop builders, no cookie-cutter layouts. Just clean, custom work that looks like you spent ten times more.</p>
+    <p class="section-body">Every site is custom designed from scratch. No drag-and-drop builders, no cookie-cutter layouts. Animations, custom layouts, interactive elements — if you can imagine it, it gets built.</p>
     <div class="section-detail">
       <div class="design-features">
-        <div class="design-feature-card">
+        <div class="design-feature-card design-feature-card-prompt">
           <div class="design-feature-icon">01</div>
-          <div class="design-feature-title">Built from zero</div>
-          <div class="design-feature-desc">No templates. Every pixel is placed with intent. Your site won't look like anyone else's.</div>
+          <div class="design-feature-title">Try it yourself</div>
+          <div class="design-feature-desc">Describe a vibe and watch this entire page transform. That's the kind of custom design you get.</div>
+          <div class="design-prompt-wrap">
+            <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
+            <div class="designer-actions">
+              <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
+              <button id="ai-reset" onclick="resetDesign()">Reset</button>
+            </div>
+            <div class="designer-status" id="ai-status"></div>
+          </div>
         </div>
         <div class="design-feature-card">
           <div class="design-feature-icon">02</div>
@@ -1151,8 +1195,8 @@
         </div>
         <div class="design-feature-card">
           <div class="design-feature-icon">03</div>
-          <div class="design-feature-title">No limits on what's possible</div>
-          <div class="design-feature-desc">Animations, custom layouts, interactive elements — if you can imagine it, it gets built. No plugin restrictions, no platform constraints.</div>
+          <div class="design-feature-title">Built from zero</div>
+          <div class="design-feature-desc">No templates. Every pixel is placed with intent. Your site won't look like anyone else's. No plugin restrictions, no platform constraints.</div>
         </div>
       </div>
     </div>
@@ -2067,11 +2111,13 @@ const demoBackBtn = document.getElementById('demo-back');
 function saveOriginalContent() {
   sectionIds.forEach(id => {
     const sec = document.getElementById(id);
+    const bodyEl = sec.querySelector('.section-body');
+    const detailEl = sec.querySelector('.section-detail');
     originalContent[id] = {
       label: sec.querySelector('.section-label').textContent,
       headline: sec.querySelector('.section-headline').innerHTML,
-      body: sec.querySelector('.section-body').innerHTML,
-      detail: sec.querySelector('.section-detail').innerHTML
+      body: bodyEl ? bodyEl.innerHTML : '',
+      detail: detailEl ? detailEl.innerHTML : ''
     };
   });
   originalContent.topbarName = document.querySelector('#topbar .name').textContent;
@@ -2117,9 +2163,11 @@ function _applyDemo(ind, industryKey) {
       const c = ind.content[id];
       sec.querySelector('.section-label').textContent = c.label;
       sec.querySelector('.section-headline').innerHTML = c.headline;
-      sec.querySelector('.section-body').innerHTML = c.body;
+      const bodyEl = sec.querySelector('.section-body');
+      if (bodyEl) bodyEl.innerHTML = c.body;
       if (c.detail) {
-        sec.querySelector('.section-detail').innerHTML = c.detail;
+        const detailEl = sec.querySelector('.section-detail');
+        if (detailEl) detailEl.innerHTML = c.detail;
       }
       if (c.ctaText) {
         const btn = sec.querySelector('#cta-button') || sec.querySelector('.cta-button');
@@ -2273,8 +2321,10 @@ function exitDemo() {
     const o = originalContent[id];
     sec.querySelector('.section-label').textContent = o.label;
     sec.querySelector('.section-headline').innerHTML = o.headline;
-    sec.querySelector('.section-body').innerHTML = o.body;
-    sec.querySelector('.section-detail').innerHTML = o.detail;
+    const bodyEl = sec.querySelector('.section-body');
+    if (bodyEl) bodyEl.innerHTML = o.body;
+    const detailEl = sec.querySelector('.section-detail');
+    if (detailEl) detailEl.innerHTML = o.detail;
   });
 
   // Re-build dynamic elements
@@ -2299,7 +2349,56 @@ document.getElementById('websites').addEventListener('click', (e) => {
 });
 
 // --- AI Designer ---
+const aiPromptInput = document.getElementById('ai-prompt');
+const aiStatus = document.getElementById('ai-status');
+const aiGenerateBtn = document.getElementById('ai-generate');
 let aiCustomStyle = null;
+
+async function generateDesign() {
+  if (!aiPromptInput) return;
+  const prompt = aiPromptInput.value.trim();
+  if (!prompt) { aiStatus.textContent = 'Please describe a style.'; return; }
+
+  aiStatus.textContent = 'Generating...';
+  aiGenerateBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'API error ' + res.status);
+    }
+
+    const style = await res.json();
+
+    if (!style.bg || !style.fg || !style.headlineFont || !style.bodyFont) {
+      throw new Error('Incomplete style returned');
+    }
+
+    aiCustomStyle = style;
+    localStorage.setItem('tbouw_ai_custom_style', JSON.stringify(style));
+    applyStyle(style);
+    showToast('AI: ' + (style.name || 'Custom'), style);
+    aiStatus.textContent = 'Applied: ' + (style.name || 'Custom');
+  } catch (e) {
+    aiStatus.textContent = 'Error: ' + e.message;
+  } finally {
+    aiGenerateBtn.disabled = false;
+  }
+}
+
+function resetDesign() {
+  aiCustomStyle = null;
+  localStorage.removeItem('tbouw_ai_custom_style');
+  applyStyle(styles[current]);
+  showToast(styles[current].name, styles[current]);
+  if (aiStatus) aiStatus.textContent = 'Reset to ' + styles[current].name;
+}
 
 // Restore custom style on load
 const savedStyle = localStorage.getItem('tbouw_ai_custom_style');
