@@ -810,7 +810,8 @@
 
   /* ── Full-screen Chat ── */
   #fs-chat {
-    position: fixed; inset: 0;
+    position: fixed; left: 0; right: 0; top: 0;
+    height: 100vh; height: 100dvh;
     z-index: 500;
     background: rgba(8,8,12,0.92);
     backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
@@ -818,6 +819,7 @@
     align-items: center; justify-content: flex-end;
     opacity: 0; pointer-events: none;
     transition: opacity 0.35s ease;
+    overflow: hidden;
   }
   #fs-chat.open { opacity: 1; pointer-events: auto; }
 
@@ -836,6 +838,7 @@
     display: flex; gap: 10px; justify-content: center;
     padding: 60px 24px 0;
     z-index: 2;
+    flex-shrink: 0;
   }
   #fs-chat-contact-bar a {
     padding: 8px 18px;
@@ -914,6 +917,7 @@
     display: flex; flex-wrap: wrap; gap: 8px;
     padding: 0 24px 8px;
     justify-content: center;
+    flex-shrink: 0;
   }
   #fs-chat-qr:empty { display: none; }
   .fc-pill {
@@ -934,6 +938,8 @@
     width: 100%; max-width: 520px;
     display: flex; gap: 10px;
     padding: 12px 24px 28px;
+    padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
   }
   #fs-chat-input-bar.hidden { display: none; }
   #fs-chat-input {
@@ -2349,6 +2355,25 @@ const fsChatProgress = document.getElementById('fs-chat-progress');
 const fcProgressFill = document.getElementById('fc-progress-fill');
 const fcProgressText = document.getElementById('fc-progress-text');
 const iframeWrap = document.getElementById('demo-iframe-wrap');
+
+(function initChatViewport() {
+  if (!window.visualViewport) return;
+  function onVPResize() {
+    if (!fsChat.classList.contains('open')) return;
+    var vp = window.visualViewport;
+    var keyboardH = window.innerHeight - vp.height;
+    if (keyboardH > 50) {
+      fsChat.style.height = vp.height + 'px';
+      fsChat.style.top = vp.offsetTop + 'px';
+    } else {
+      fsChat.style.height = '';
+      fsChat.style.top = '0';
+    }
+    setTimeout(function() { fsChatScroll.scrollTop = fsChatScroll.scrollHeight; }, 50);
+  }
+  window.visualViewport.addEventListener('resize', onVPResize);
+  window.visualViewport.addEventListener('scroll', onVPResize);
+})();
 const iframeFrame = document.getElementById('demo-iframe-frame');
 const iframeLabel = document.getElementById('demo-iframe-label');
 const leadCaptureCta = document.getElementById('lead-capture-cta');
@@ -2451,7 +2476,10 @@ function chatOpen(entryPoint) {
     waLink.href = 'https://wa.me/31618072754?text=' + waText;
   }
 
+  document.body.style.overflow = 'hidden';
   fsChat.classList.add('open');
+  fsChat.style.height = '';
+  fsChat.style.top = '0';
   if (chatState === 'IDLE') {
     // RESET STATE VARIABLES for new session
     buildStarted = false;
@@ -2497,8 +2525,11 @@ function chatOpen(entryPoint) {
 
 function chatClose() {
   fsChat.classList.remove('open');
+  fsChat.style.height = '';
+  fsChat.style.top = '0';
+  document.body.style.overflow = '';
+  fsChatInput.blur();
 
-  // Clean up polling if still active
   if (buildPolling) {
     clearInterval(buildPolling);
     buildPolling = null;
