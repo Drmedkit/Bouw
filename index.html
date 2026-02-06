@@ -71,6 +71,82 @@
     transform: translateX(-50%) translateY(0);
   }
 
+  /* Desktop style rail */
+  #style-rail {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 12px 0;
+  }
+  #style-rail .rail-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+    padding: 6px 14px 6px 0;
+    position: relative;
+    transition: all 0.25s ease;
+  }
+  #style-rail .rail-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.25;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+  #style-rail .rail-label {
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    padding-right: 0;
+  }
+  #style-rail .rail-item:hover .rail-label {
+    opacity: 0.6;
+    max-width: 120px;
+    padding-right: 10px;
+  }
+  #style-rail .rail-item:hover .rail-dot {
+    opacity: 0.6;
+    transform: scale(1.4);
+  }
+  #style-rail .rail-item.active .rail-dot {
+    opacity: 1;
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 8px currentColor;
+  }
+  #style-rail .rail-item.active .rail-label {
+    opacity: 0.9;
+    max-width: 120px;
+    padding-right: 10px;
+  }
+  .intro-desktop { display: none; }
+  @media (max-width: 768px) {
+    #style-rail { display: none; }
+    .intro-mobile { display: inline; }
+    .intro-desktop { display: none; }
+  }
+  @media (min-width: 769px) {
+    #swipe-tutorial { display: none !important; }
+    .intro-mobile { display: none; }
+    .intro-desktop { display: inline; }
+  }
+
   /* Lazy loading animations */
   .animate-on-scroll {
     opacity: 0;
@@ -905,7 +981,7 @@
   <section id="intro">
     <div class="section-label">tobiasbouw.com</div>
     <h1 class="section-headline">I build websites<br>& automations for small businesses.</h1>
-    <p class="section-body">Swipe left or right to see how this entire page transforms. Each style is a world I can build for you. Scroll down to explore what I offer.</p>
+    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you. Scroll down to explore what I offer.</p>
     <div class="section-detail">
       <div class="tagline">1 project per week · Done in days, not months</div>
     </div>
@@ -1003,6 +1079,8 @@
   </section>
 </main>
 </div>
+
+<div id="style-rail"></div>
 
 <div id="swipe-tutorial">
   <div class="hand">🤚</div>
@@ -1354,7 +1432,44 @@ function applyStyle(s) {
 
   // Update chat accent color
   if (typeof applyChatStyles === 'function') applyChatStyles();
+
+  // Update style rail
+  if (typeof updateStyleRail === 'function') updateStyleRail();
 }
+
+// Build desktop style rail
+const styleRail = document.getElementById('style-rail');
+function buildStyleRail() {
+  styleRail.innerHTML = '';
+  styles.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'rail-item' + (i === current ? ' active' : '');
+    item.innerHTML = `<span class="rail-label">${s.name}</span><span class="rail-dot"></span>`;
+    item.addEventListener('click', () => goTo(i));
+    styleRail.appendChild(item);
+  });
+}
+
+function updateStyleRail() {
+  if (!styleRail) return;
+  const items = styleRail.querySelectorAll('.rail-item');
+  if (!items.length) return;
+  const s = styles[current];
+  styleRail.style.color = s.fg;
+  items.forEach((item, i) => {
+    if (i === current) {
+      item.classList.add('active');
+      item.querySelector('.rail-dot').style.background = s.accent;
+      item.querySelector('.rail-dot').style.boxShadow = `0 0 8px ${s.accent}`;
+    } else {
+      item.classList.remove('active');
+      item.querySelector('.rail-dot').style.background = s.fg;
+      item.querySelector('.rail-dot').style.boxShadow = 'none';
+    }
+  });
+}
+
+buildStyleRail();
 
 // Initial render
 applyStyle(styles[0]);
@@ -1815,6 +1930,7 @@ function enterDemo(industryKey) {
 
   const wasDemoActive = demoActive;
   demoActive = true;
+  if (styleRail) styleRail.style.display = 'none';
 
   // Clean up previous demo hero
   const oldHero = document.querySelector('.demo-hero-img');
@@ -1986,6 +2102,7 @@ function exitDemo() {
   document.body.classList.remove('demo-active');
   demoBackBtn.classList.remove('visible');
   document.getElementById('demo-nav').classList.remove('visible');
+  if (styleRail && window.innerWidth > 768) styleRail.style.display = '';
 
   // Clean up hero image
   const introSec = document.getElementById('intro');
