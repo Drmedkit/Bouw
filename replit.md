@@ -71,15 +71,16 @@ leads (
 - **Escape routes**: WhatsApp button (wa.me/31618072754, prominent on mobile) and email link (tobiassteltnl@gmail.com) always visible in chat UI
 - **WhatsApp pre-fill** includes the style they were viewing
 
-## Chat Flow
+## Chat Flow (Parallel Architecture)
 1. Visitor opens chat from any entry point → context captured (style, entry point, device)
 2. AI generates personalized greeting based on context
-3. AI gathers through fun conversation: business name, type, vibe, email, name, phone, + extras
-4. Once minimum info collected + email → background build triggers
-5. Lead saved to database with phone + entry_context
-6. Frontend polls /api/chat/status — user keeps chatting via /api/chat/continue
-7. Page ready → preview slides in, lead updated in database with generated HTML
-8. Visitors who don't want to chat can use WhatsApp or email escape routes
+3. AI asks for business name FIRST — this is the trigger
+4. As soon as business name is captured → background build starts immediately (page + images in parallel)
+5. Chat continues gathering type, vibe, email, name, phone, extras — all while build runs
+6. Build uses ThreadPoolExecutor: page HTML and custom images (grok-2-image) generate simultaneously
+7. Images are injected into page HTML after both complete (Unsplash URLs replaced with custom ones)
+8. Preview shown only after BOTH email is collected AND build is done
+9. Visitors who don't want to chat can use WhatsApp or email escape routes
 
 ## Contact Info (for chat escape routes)
 - WhatsApp: +31 6 18072754

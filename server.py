@@ -3,6 +3,7 @@ import json
 import re
 import uuid
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pg8000
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify, send_from_directory
@@ -88,21 +89,22 @@ ABSOLUTE RULE: NEVER use emojis. Not a single one. No exceptions. Write in plain
 
 CONVERSATION FLOW — Ask questions in this order (one at a time):
 
-PHASE 1 — Core requirements (ask these FIRST):
+PRIORITY 1 — Get the business name FIRST:
 1. business: Their business name ("What's your business called?")
+   - This is the most important field. Get it immediately.
+
+PRIORITY 2 — Core details (ask these next, quickly):
 2. type: Business category — accept whatever they say (restaurant, trades, consulting, etc.)
    - Ask: "What type of business is it?"
 3. vibe: Design preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
    - Ask: "Which style direction fits? Warm & elegant, dark & bold, clean & minimal, loud & electric, playful & fun, or raw & edgy?"
    - If they're unsure: "Dark & bold works well for bars. Clean & minimal suits professional services."
 
-IMPORTANT: Once you have business + type + vibe, continue gathering details. Don't mention anything is being built.
-
-PHASE 2 — Email (REQUIRED):
+PRIORITY 3 — Email (REQUIRED for preview):
 4. email: Their email address ("What's your email?")
    - After receiving: Continue gathering additional details below
 
-PHASE 3 — Additional details (gather these after email):
+PRIORITY 4 — Additional details (gather these while preview builds):
 5. name: Their name ("What's your name?")
 6. tagline: Business tagline ("Do you have a tagline or slogan?")
 7. colors: Brand colors ("Any specific brand colors?")
@@ -134,7 +136,7 @@ CRITICAL RULES:
 - No excitement, no hype
 - Professional acknowledgments only
 - After getting email, continue gathering optional details
-- Don't mention background processes
+- Don't mention background processes or that anything is being built
 - READ THE CONVERSATION HISTORY. If the user already said their business name, DO NOT ask again. Extract data from what they already told you.
 - READ THE LEAD SUMMARY below. Any field listed there is DONE. Move to the next empty field.
 - Always populate the lead JSON with everything you know from the conversation so far
@@ -180,7 +182,7 @@ Features: {features}
 Create a complete HTML page (<!DOCTYPE html> through </html>) that:
 - Is FULLY self-contained with ALL CSS inline in a <style> tag
 - Uses Google Fonts loaded via CDN <link> tags
-- Has a stunning hero section with a background image (use provided custom images if available, otherwise Unsplash with ?w=1200&h=800&fit=crop)
+- Has a stunning hero section with a background image (use Unsplash with ?w=1200&h=800&fit=crop)
 - Has at least 4 distinct sections (hero, about/services, features/menu, CTA)
 - Is fully mobile-responsive
 - Matches the requested vibe perfectly
@@ -283,52 +285,74 @@ def generate_images_for_page(lead):
     return images
 
 
+def _generate_page_html(lead):
+    prompt = PAGE_BUILD_PROMPT.format(
+        business=lead.get("business", "Business"),
+        type=lead.get("type", "Other"),
+        vibe=lead.get("vibe", "Clean & Minimal"),
+        name=lead.get("name", ""),
+        email=lead.get("email", ""),
+        tagline=lead.get("tagline", ""),
+        colors=lead.get("colors", ""),
+        services=lead.get("services", ""),
+        audience=lead.get("audience", ""),
+        features=lead.get("features", ""),
+    )
+    response = xai_client.chat.completions.create(
+        model=BUILD_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=8192,
+    )
+    html = response.choices[0].message.content or ""
+    html = re.sub(r"^```(?:html)?\s*", "", html.strip())
+    html = re.sub(r"\s*```$", "", html)
+    if "<!DOCTYPE" not in html.upper():
+        return None
+    return html
+
+
+def _inject_images_into_page(page_html, images):
+    if not page_html or not images:
+        return page_html
+    hero_url = images.get("hero", "")
+    secondary_url = images.get("secondary", "")
+    img_pattern = re.compile(r"https://images\.unsplash\.com/[^\s\"')\]>]+")
+    if hero_url:
+        page_html = img_pattern.sub(hero_url, page_html, count=1)
+    if secondary_url:
+        matches = list(img_pattern.finditer(page_html))
+        if len(matches) >= 1:
+            last = matches[-1]
+            page_html = page_html[:last.start()] + secondary_url + page_html[last.end():]
+    return page_html
+
+
 def build_page_in_background(job_id, lead):
     try:
-        images = generate_images_for_page(lead)
-        hero_img = images.get("hero", "")
-        secondary_img = images.get("secondary", "")
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            page_future = executor.submit(_generate_page_html, lead)
+            image_future = executor.submit(generate_images_for_page, lead)
 
-        image_instructions = ""
-        if hero_img or secondary_img:
-            image_instructions = "\n\nCUSTOM IMAGES (use these exact URLs, do NOT use Unsplash):"
-            if hero_img:
-                image_instructions += f"\n- Hero/banner image: {hero_img}"
-            if secondary_img:
-                image_instructions += f"\n- Secondary/about section image: {secondary_img}"
-            image_instructions += "\nUse these images with <img> tags or as CSS background-image url() values. They are the real images for this business."
+            page_html = page_future.result(timeout=80)
+            try:
+                images = image_future.result(timeout=80)
+            except Exception as img_err:
+                print(f"[build] Image generation failed, continuing without: {img_err}")
+                images = {}
 
-        prompt = PAGE_BUILD_PROMPT.format(
-            business=lead.get("business", "Business"),
-            type=lead.get("type", "Other"),
-            vibe=lead.get("vibe", "Clean & Minimal"),
-            name=lead.get("name", ""),
-            email=lead.get("email", ""),
-            tagline=lead.get("tagline", ""),
-            colors=lead.get("colors", ""),
-            services=lead.get("services", ""),
-            audience=lead.get("audience", ""),
-            features=lead.get("features", ""),
-        ) + image_instructions
+        page_html = _inject_images_into_page(page_html, images)
 
-        response = xai_client.chat.completions.create(
-            model=BUILD_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=8192,
-        )
-        page_html = response.choices[0].message.content or ""
-
-        page_html = re.sub(r"^```(?:html)?\s*", "", page_html.strip())
-        page_html = re.sub(r"\s*```$", "", page_html)
-
-        if "<!DOCTYPE" not in page_html.upper():
-            page_html = None
-
-        with build_lock:
-            build_jobs[job_id]["status"] = "done"
-            build_jobs[job_id]["page"] = page_html
-
-        save_lead_to_db(job_id, lead, status="done", page_html=page_html)
+        if page_html:
+            with build_lock:
+                build_jobs[job_id]["status"] = "done"
+                build_jobs[job_id]["page"] = page_html
+            save_lead_to_db(job_id, lead, status="done", page_html=page_html)
+        else:
+            print(f"[build] Invalid HTML generated for job {job_id}")
+            with build_lock:
+                build_jobs[job_id]["status"] = "error"
+                build_jobs[job_id]["page"] = None
+            save_lead_to_db(job_id, lead, status="error")
 
     except Exception as e:
         print(f"[build] Error building page for job {job_id}: {e}")
@@ -536,14 +560,14 @@ def api_chat():
         print(f"[chat] Error: {error_msg}")
         return jsonify({"error": "Something went wrong. Please try again."}), 500
 
-    has_minimum = lead.get("business") and lead.get("type") and lead.get("vibe")
+    has_business = bool(lead.get("business"))
     has_email = bool(lead.get("email"))
     existing_job = data.get("jobId")  # Frontend passes this after build triggered
 
     entry_ctx_str = json.dumps(visitor_context) if visitor_context else ""
 
-    # Phase 1: Minimum data collected, trigger build immediately
-    if has_minimum and not existing_job:
+    # Phase 1: Business name collected — start building immediately with defaults
+    if has_business and not existing_job:
         job_id = str(uuid.uuid4())
         with build_lock:
             build_jobs[job_id] = {
