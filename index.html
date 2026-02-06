@@ -269,67 +269,81 @@
   }
 
   .design-features {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0;
     margin-top: 8px;
   }
   .design-feature-card {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    padding: 18px 0;
-    border-bottom: 1px solid rgba(128,128,128,0.12);
+    padding: 28px 24px 28px 0;
     transition: all 0.4s;
   }
   .design-feature-card:first-child {
-    border-top: 1px solid rgba(128,128,128,0.12);
+    border-right: 1px solid rgba(128,128,128,0.1);
+    padding-right: 32px;
   }
-  .design-feature-card:hover {
-    padding-left: 8px;
+  .design-feature-card:nth-child(2) {
+    padding-left: 32px;
   }
   .design-feature-icon {
     font-family: 'Fira Code', monospace;
-    font-size: 0.7rem;
-    opacity: 0.35;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
-    width: 24px;
-  }
-  .design-feature-body {
-    flex: 1;
-    min-width: 0;
+    font-size: 0.65rem;
+    opacity: 0.3;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
   }
   .design-feature-title {
     font-weight: 700;
     font-size: 1rem;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     transition: font-family 0.4s, color 0.4s;
   }
   .design-feature-desc {
-    font-size: 0.85rem;
-    line-height: 1.55;
-    opacity: 0.55;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    opacity: 0.5;
     transition: font-family 0.4s, color 0.4s;
   }
-  .design-prompt-wrap {
-    margin-top: 14px;
+  .design-prompt-section {
+    margin-top: 32px;
+    padding: 32px;
+    border-radius: 16px;
+    border: 1px solid rgba(128,128,128,0.12);
+    background: rgba(128,128,128,0.03);
+    transition: all 0.4s;
+  }
+  .design-prompt-section:hover {
+    border-color: rgba(128,128,128,0.25);
+  }
+  .design-prompt-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .design-prompt-header .design-feature-icon {
+    margin-bottom: 0;
+  }
+  .design-prompt-sub {
+    font-size: 0.82rem;
+    opacity: 0.45;
+    margin-bottom: 20px;
   }
   .design-prompt-wrap textarea {
-    width: 100%; padding: 12px; font-size: 0.85rem; border-radius: 8px;
-    border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
+    width: 100%; padding: 14px 16px; font-size: 0.9rem; border-radius: 10px;
+    border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
     color: inherit; font-family: 'Familjen Grotesk', sans-serif;
-    resize: none; min-height: 56px; outline: none; transition: border-color 0.3s;
+    resize: none; min-height: 60px; outline: none; transition: border-color 0.3s;
     box-sizing: border-box; overflow: hidden;
     scrollbar-width: none; -ms-overflow-style: none;
   }
   .design-prompt-wrap textarea::-webkit-scrollbar { display: none; }
-  .design-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.6); }
+  .design-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.5); }
   .design-prompt-wrap .designer-actions {
-    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
   }
   .design-prompt-wrap .designer-actions button {
-    padding: 8px 20px; font-size: 0.8rem; border-radius: 999px;
+    padding: 10px 24px; font-size: 0.8rem; border-radius: 999px;
     border: 1.5px solid currentColor; background: transparent;
     color: inherit; cursor: pointer; font-family: 'Familjen Grotesk', sans-serif;
     font-weight: 600; transition: opacity 0.3s, transform 0.2s;
@@ -343,14 +357,25 @@
     mix-blend-mode: difference;
   }
   .design-prompt-wrap .designer-status {
-    margin-top: 8px; font-size: 0.75rem; font-family: 'Fira Code', monospace;
-    opacity: 0.6; min-height: 1.2em;
+    margin-top: 10px; font-size: 0.75rem; font-family: 'Fira Code', monospace;
+    opacity: 0.5; min-height: 1.2em;
   }
 
   @media (max-width: 768px) {
-    .design-feature-card {
-      padding: 14px 0;
-      gap: 12px;
+    .design-features {
+      grid-template-columns: 1fr;
+    }
+    .design-feature-card:first-child {
+      border-right: none;
+      border-bottom: 1px solid rgba(128,128,128,0.1);
+      padding: 0 0 20px 0;
+    }
+    .design-feature-card:nth-child(2) {
+      padding: 20px 0 0 0;
+    }
+    .design-prompt-section {
+      padding: 24px 20px;
+      margin-top: 24px;
     }
   }
 
@@ -1337,20 +1362,22 @@
         <div class="design-feature-card">
           <div class="design-feature-icon">02</div>
           <div class="design-feature-title">Built from zero</div>
-          <div class="design-feature-desc">No templates. Every pixel is placed with intent. Your site won't look like anyone else's. No plugin restrictions, no platform constraints.</div>
+          <div class="design-feature-desc">No templates. Every pixel is placed with intent. Your site won't look like anyone else's.</div>
         </div>
-        <div class="design-feature-card design-feature-card-prompt">
+      </div>
+      <div class="design-prompt-section">
+        <div class="design-prompt-header">
           <div class="design-feature-icon">03</div>
           <div class="design-feature-title">Try it yourself</div>
-          <div class="design-feature-desc">Describe a vibe and we'll match it. Go ahead — type anything.</div>
-          <div class="design-prompt-wrap">
-            <textarea id="ai-prompt" placeholder=""></textarea>
-            <div class="designer-actions">
-              <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
-              <button id="ai-reset" onclick="resetDesign()">Reset</button>
-            </div>
-            <div class="designer-status" id="ai-status"></div>
+        </div>
+        <div class="design-prompt-sub">Describe a vibe and watch this page transform.</div>
+        <div class="design-prompt-wrap">
+          <textarea id="ai-prompt" placeholder=""></textarea>
+          <div class="designer-actions">
+            <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
+            <button id="ai-reset" onclick="resetDesign()">Reset</button>
           </div>
+          <div class="designer-status" id="ai-status"></div>
         </div>
       </div>
     </div>
