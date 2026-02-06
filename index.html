@@ -1110,175 +1110,154 @@
 
   /* CTA Options */
   .cta-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    margin-top: 32px;
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
   }
   .cta-option {
-    padding: 32px 24px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.02);
-    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    transition: opacity 0.3s;
   }
-  .cta-option:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.04);
-  }
-  .cta-option h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.25rem;
-    margin: 0 0 8px 0;
-  }
-  .cta-option p {
-    opacity: 0.6;
-    font-size: 0.9rem;
-    margin: 0 0 20px 0;
+  .cta-option:hover { opacity: 0.7; }
+  .cta-option .cta-label {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    white-space: nowrap;
   }
   .cta-option input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 14px;
+    border: 1px solid rgba(128,128,128,0.3);
     border-radius: 8px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(128,128,128,0.08);
     color: inherit;
-    font-family: inherit;
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-    transition: border-color 0.3s;
-  }
-  .cta-option input:focus {
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.85rem;
+    width: 200px;
     outline: none;
-    border-color: rgba(255,255,255,0.3);
+    transition: border-color 0.3s;
+    box-sizing: border-box;
   }
-  .cta-option button, .cta-option a button {
-    width: 100%;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.1);
+  .cta-option input:focus { border-color: rgba(128,128,128,0.6); }
+  .cta-option .cta-btn {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    background: transparent;
     color: inherit;
-    font-family: 'Syne', sans-serif;
+    font-family: 'Familjen Grotesk', sans-serif;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     cursor: pointer;
-    transition: all 0.3s;
-  }
-  .cta-option button:hover, .cta-option a button:hover {
-    background: rgba(255,255,255,0.15);
-    transform: translateY(-2px);
-  }
-  .cta-option a {
+    transition: opacity 0.3s, transform 0.2s;
     text-decoration: none;
-    color: inherit;
+    white-space: nowrap;
+  }
+  .cta-option .cta-btn:hover { opacity: 0.7; }
+  .cta-option .cta-btn:active { transform: scale(0.97); }
+  .cta-option .cta-btn.primary {
+    background: currentColor;
+  }
+  .cta-option .cta-btn.primary span {
+    mix-blend-mode: difference;
+  }
+  .cta-email-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .cta-divider {
+    opacity: 0.2;
+    font-size: 0.75rem;
   }
 
   /* FAQ Section */
-  #faq {
-    margin-top: 120px;
-  }
-  .faq-input-container {
+  .faq-input-wrap {
     display: flex;
-    gap: 12px;
-    margin: 32px 0;
-    max-width: 600px;
+    gap: 8px;
+    align-items: center;
+    margin-top: 16px;
   }
   #faq-input {
     flex: 1;
-    padding: 14px 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    background: rgba(255,255,255,0.02);
+    max-width: 400px;
+    padding: 10px 14px;
+    border: 1px solid rgba(128,128,128,0.3);
+    border-radius: 8px;
+    background: rgba(128,128,128,0.08);
     color: inherit;
-    font-family: inherit;
-    font-size: 1rem;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
     transition: border-color 0.3s;
   }
-  #faq-input:focus {
-    outline: none;
-    border-color: rgba(255,255,255,0.3);
-  }
+  #faq-input:focus { border-color: rgba(128,128,128,0.6); }
   #faq-send {
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.1);
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    background: transparent;
     color: inherit;
-    font-size: 1.5rem;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
     cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: opacity 0.3s, transform 0.2s;
   }
-  #faq-send:hover {
-    background: rgba(255,255,255,0.15);
-    transform: translateY(-2px);
-  }
+  #faq-send:hover { opacity: 0.7; }
+  #faq-send:active { transform: scale(0.97); }
   #faq-answers {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    max-width: 800px;
+    gap: 12px;
+    margin-top: 20px;
   }
   .faq-answer {
-    padding: 24px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.02);
-    animation: slideIn 0.4s cubic-bezier(0.2, 0, 0, 1);
-    position: relative;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(128,128,128,0.15);
+    background: rgba(128,128,128,0.04);
+    animation: faqSlideIn 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes faqSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .faq-answer.fade-out {
-    animation: fadeOut 0.3s forwards;
+    animation: faqFadeOut 0.3s forwards;
   }
-  @keyframes fadeOut {
-    to {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
+  @keyframes faqFadeOut {
+    to { opacity: 0; transform: translateY(-10px); }
   }
   .faq-question {
     font-family: 'Syne', sans-serif;
     font-weight: 600;
-    font-size: 1.05rem;
-    margin: 0 0 12px 0;
-    opacity: 0.8;
+    font-size: 0.9rem;
+    margin: 0 0 8px 0;
+    opacity: 0.5;
   }
   .faq-response {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     line-height: 1.6;
     opacity: 0.7;
   }
   .faq-feedback {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    font-size: 0.85rem;
-    opacity: 0.5;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(128,128,128,0.08);
+    font-size: 0.75rem;
+    opacity: 0.4;
   }
 
   @media (max-width: 768px) {
-    .cta-options {
-      grid-template-columns: 1fr;
-    }
-    .faq-input-container {
-      max-width: 100%;
-    }
+    .cta-options { flex-direction: column; gap: 16px; }
+    .cta-email-row { flex-direction: column; align-items: stretch; }
+    .cta-email-row input { width: 100%; }
+    .faq-input-wrap { flex-direction: column; align-items: stretch; }
+    #faq-input { max-width: 100%; }
   }
 </style>
 </head>
@@ -1403,26 +1382,22 @@
   <section id="cta">
     <div class="section-label">Let's Talk</div>
     <h2 class="section-headline">Ready to build yours?</h2>
-    <p class="section-body">Whether you need a landing page, booking system, or automations that save you hours every week — let's make it happen. I take on one project per week. If you're ready, let's talk.</p>
+    <p class="section-body">One project per week. If you're ready, let's talk.</p>
     <div class="section-detail">
       <div class="cta-options">
         <div class="cta-option">
-          <h3>Leave your email</h3>
-          <p>I'll reach out within 24h</p>
-          <input type="email" id="cta-email-input" placeholder="your@email.com">
-          <button onclick="submitEmail()">Send →</button>
+          <div class="cta-email-row">
+            <input type="email" id="cta-email-input" placeholder="your@email.com">
+            <button class="cta-btn primary" onclick="submitEmail()"><span>Send</span></button>
+          </div>
         </div>
+        <span class="cta-divider">or</span>
         <div class="cta-option">
-          <h3>WhatsApp me</h3>
-          <p>Direct message</p>
-          <a href="https://wa.me/31618072754?text=Hey%20Tobias%2C%20I%20want%20to%20build%20a%20website" target="_blank" rel="noopener">
-            <button>Open WhatsApp →</button>
-          </a>
+          <a class="cta-btn" href="https://wa.me/31618072754?text=Hey%20Tobias%2C%20I%20want%20to%20build%20a%20website" target="_blank" rel="noopener">WhatsApp</a>
         </div>
+        <span class="cta-divider">or</span>
         <div class="cta-option">
-          <h3>Email me</h3>
-          <p>tobiassteltnl@gmail.com</p>
-          <button onclick="copyEmail()">Copy email →</button>
+          <button class="cta-btn" onclick="copyEmail()">Copy email</button>
         </div>
       </div>
     </div>
@@ -1431,9 +1406,9 @@
   <section id="faq">
     <div class="section-label">Questions?</div>
     <h2 class="section-headline">Ask me anything.</h2>
-    <div class="faq-input-container">
-      <input type="text" id="faq-input" placeholder="What's your question?">
-      <button id="faq-send" onclick="askQuestion()">→</button>
+    <div class="faq-input-wrap">
+      <input type="text" id="faq-input" placeholder="Type your question...">
+      <button id="faq-send" onclick="askQuestion()">Ask</button>
     </div>
     <div id="faq-answers"></div>
   </section>
