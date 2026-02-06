@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tobias Bouw — Websites & AI Automations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Familjen+Grotesk:wght@400;600;700&family=Fira+Code:wght@400;700&family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@300;700&family=Orbitron:wght@400;700;900&family=Syne:wght@400;700;800&family=Unbounded:wght@400;700;900&family=Zilla+Slab:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    min-height: 100vh;
+    transition: background 0.5s ease, color 0.5s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Top bar */
+  #topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    transition: color 0.4s, background 0.4s;
+  }
+  #topbar.scrolled { background: inherit; backdrop-filter: blur(10px); }
+  #topbar .name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  #topbar .cta-link {
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.8rem;
+    text-decoration: none;
+    color: inherit;
+    background: none;
+    border: 1.5px solid currentColor;
+    padding: 6px 18px;
+    border-radius: 999px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    cursor: pointer;
+  }
+  #topbar .cta-link:hover { opacity: 1; }
+
+  /* Floating style name toast */
+  #style-toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 100;
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s, background 0.3s, color 0.3s;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  #style-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Lazy loading animations */
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .animate-on-scroll.delay-1 { transition-delay: 0.1s; }
+  .animate-on-scroll.delay-2 { transition-delay: 0.2s; }
+  .animate-on-scroll.delay-3 { transition-delay: 0.3s; }
+  .animate-on-scroll.delay-4 { transition-delay: 0.4s; }
+
+  .animate-stagger > * {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .animate-stagger.visible > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .animate-stagger.visible > *:nth-child(1) { transition-delay: 0.05s; }
+  .animate-stagger.visible > *:nth-child(2) { transition-delay: 0.1s; }
+  .animate-stagger.visible > *:nth-child(3) { transition-delay: 0.15s; }
+  .animate-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
+  .animate-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
+
+  /* Main content */
+  main {
+    padding: 100px 24px 120px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  section {
+    margin-bottom: 120px;
+    padding: 40px;
+    border-radius: 16px;
+    transition: background 0.4s, border 0.4s, box-shadow 0.4s;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.45;
+    margin-bottom: 14px;
+    transition: font-family 0.4s;
+  }
+
+  .section-headline {
+    margin-bottom: 20px;
+    line-height: 1.1;
+    transition: font-family 0.4s, font-size 0.4s, font-weight 0.4s;
+  }
+
+  .section-body {
+    line-height: 1.75;
+    max-width: 600px;
+    transition: font-family 0.4s, color 0.4s;
+  }
+
+  .section-detail {
+    margin-top: 28px;
+  }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .tag-item { padding: 6px 16px; font-size: 0.8rem; border-radius: 4px; transition: all 0.4s; }
+
+  /* Overlay for special effects */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.6s;
+    opacity: 0;
+  }
+
+  @media (max-width: 768px) {
+    main { padding: 90px 16px 140px; }
+    section { padding: 28px; margin-bottom: 80px; }
+    .section-headline { font-size: clamp(1.5rem, 6vw, 2.5rem) !important; }
+    .section-body { font-size: 0.95rem !important; }
+    #style-indicator { padding: 10px 16px; font-size: 0.8rem; }
+  }
+
+  /* Industry showcase cards */
+  .mockup-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 24px;
+  }
+  .mockup-card {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.5s cubic-bezier(0.2,0,0,1), box-shadow 0.5s;
+    cursor: pointer;
+  }
+  .mockup-card:hover {
+    transform: translateY(-4px);
+  }
+  .mockup-card:active { transform: scale(0.98); }
+  .mockup-preview {
+    height: 260px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    padding: 24px;
+  }
+  .mockup-preview .card-content {
+    position: relative;
+    z-index: 2;
+  }
+  .mockup-preview .card-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .mockup-preview .card-sub {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+  .mockup-preview .card-cta {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: transform 0.3s;
+  }
+  .mockup-card:hover .card-cta { transform: translateX(4px); }
+
+  /* Restaurant — cinematic photo with warm overlay */
+  .mockup-preview.restaurant {
+    background: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=500&fit=crop&auto=format&q=80') center/cover no-repeat;
+    color: #f4e8d8;
+  }
+  .mockup-preview.restaurant::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(170deg, rgba(26,15,10,0.3) 0%, rgba(26,15,10,0.5) 40%, rgba(26,17,12,0.85) 100%);
+  }
+  .mockup-preview.restaurant::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, #d4a574, transparent);
+  }
+  .mockup-preview.restaurant .card-title { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.8rem; }
+  .mockup-preview.restaurant .card-sub { color: #d4a574; }
+  .mockup-preview.restaurant .card-cta {
+    background: #d4a574; color: #1a0f0a;
+  }
+  .restaurant .ui-element {
+    position: absolute; border-radius: 6px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(212,165,116,0.2);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .restaurant .ui-element.menu-card {
+    top: 16px; right: 16px;
+    width: 110px; height: 85px;
+    display: flex; flex-direction: column; gap: 5px; padding: 10px;
+  }
+  .restaurant .ui-element.menu-card span {
+    height: 3px; background: rgba(212,165,116,0.4); border-radius: 2px;
+  }
+  .restaurant .ui-element.menu-card span:nth-child(2) { width: 70%; }
+  .restaurant .ui-element.menu-card span:nth-child(3) { width: 85%; }
+  .restaurant .ui-element.menu-card span:nth-child(4) { width: 55%; }
+  .restaurant .ui-element.time-badge {
+    top: 16px; left: 16px;
+    padding: 6px 12px; font-family: 'Fira Code', monospace; font-size: 9px;
+    color: #d4a574; letter-spacing: 1px;
+  }
+
+  /* Nightclub — dark photo with neon glow overlay */
+  @keyframes neonPulse {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  .mockup-preview.nightclub {
+    background: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=500&fit=crop&auto=format&q=80') center/cover no-repeat;
+    color: #fff;
+  }
+  .mockup-preview.nightclub::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(8,8,15,0.4) 0%, rgba(8,8,15,0.6) 30%, rgba(8,8,15,0.9) 100%);
+  }
+  .mockup-preview.nightclub::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #c44dff 30%, #ff2975 70%, transparent 100%);
+    animation: neonPulse 2s ease-in-out infinite;
+  }
+  .mockup-preview.nightclub .card-title { font-family: 'Unbounded', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; font-size: 1.8rem; }
+  .mockup-preview.nightclub .card-sub { color: #c44dff; }
+  .mockup-preview.nightclub .card-cta {
+    background: #c44dff; color: #fff;
+    box-shadow: 0 0 20px rgba(196,77,255,0.5);
+  }
+  .nightclub .ui-element { position: absolute; }
+  .nightclub .ui-element.ticket-badge {
+    top: 16px; left: 16px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(196,77,255,0.3);
+    border-radius: 6px; padding: 6px 12px;
+    font-family: 'Orbitron', monospace; font-size: 9px;
+    color: #c44dff; letter-spacing: 1px;
+  }
+  .nightclub .ui-element.eq-bars {
+    top: 16px; right: 16px;
+    display: flex; align-items: flex-end; gap: 3px;
+    height: 35px;
+  }
+  .nightclub .ui-element.eq-bars span {
+    width: 4px; border-radius: 2px;
+    background: linear-gradient(to top, #c44dff, #ff2975);
+    animation: eqBounce 0.8s ease-in-out infinite alternate;
+  }
+  .nightclub .eq-bars span:nth-child(1) { height: 60%; animation-delay: 0s; }
+  .nightclub .eq-bars span:nth-child(2) { height: 100%; animation-delay: 0.1s; }
+  .nightclub .eq-bars span:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+  .nightclub .eq-bars span:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+  .nightclub .eq-bars span:nth-child(5) { height: 55%; animation-delay: 0.15s; }
+  @keyframes eqBounce {
+    0% { transform: scaleY(0.4); }
+    100% { transform: scaleY(1); }
+  }
+
+  /* E-commerce — product photo with clean overlay */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+  .mockup-preview.ecommerce {
+    background: url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=500&fit=crop&auto=format&q=80') center/cover no-repeat;
+    color: #1a1a1a;
+    padding: 0;
+  }
+  .mockup-preview.ecommerce::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(248,247,245,0.1) 0%, rgba(248,247,245,0.6) 50%, rgba(248,247,245,0.95) 100%);
+  }
+  .mockup-preview.ecommerce .card-content {
+    padding: 24px;
+    width: 100%;
+    position: relative; z-index: 2;
+  }
+  .mockup-preview.ecommerce .card-title { font-family: 'Familjen Grotesk', sans-serif; font-size: 1.8rem; }
+  .mockup-preview.ecommerce .card-sub { color: #666; }
+  .mockup-preview.ecommerce .card-cta {
+    background: #1a1a1a; color: #fff;
+  }
+  .ecommerce .shop-ui {
+    position: absolute; top: 16px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    z-index: 2;
+  }
+  .ecommerce .shop-badge {
+    background: #fff; color: #1a1a1a;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 9px; font-weight: 600; letter-spacing: 1px;
+    padding: 6px 12px; border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .ecommerce .shop-cart {
+    background: #1a1a1a; color: #fff;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 9px; font-weight: 600;
+    padding: 6px 12px; border-radius: 4px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ecommerce .shop-cart .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #fff; opacity: 0.9;
+  }
+
+  .mockup-card-label {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .mockup-preview { height: 220px; }
+    .mockup-preview .card-title { font-size: 1.3rem; }
+  }
+
+  /* Demo page layouts */
+  .demo-hero-sub {
+    font-size: 0.85rem; opacity: 0.5; margin-top: 12px;
+    font-family: 'Fira Code', monospace; letter-spacing: 1px;
+  }
+  .demo-cta-btn {
+    display: inline-block; margin-top: 20px; padding: 14px 32px;
+    border-radius: 999px; font-size: 0.9rem; font-weight: 700;
+    text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .demo-cta-btn:hover { transform: translateY(-2px); }
+
+  /* Menu layout */
+  .demo-menu { margin-top: 8px; }
+  .demo-menu-cat { margin-bottom: 28px; }
+  .demo-menu-cat h3 {
+    font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase;
+    opacity: 0.4; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(128,128,128,0.2);
+  }
+  .demo-menu-item {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(128,128,128,0.08);
+  }
+  .demo-menu-item:last-child { border-bottom: none; }
+  .demo-dish-info { flex: 1; margin-right: 16px; }
+  .demo-dish-name { font-weight: 600; font-size: 0.95rem; }
+  .demo-dish-desc {
+    font-size: 0.8rem; opacity: 0.5; margin-top: 2px; line-height: 1.4;
+  }
+  .demo-dish-price {
+    font-family: 'Fira Code', monospace; font-size: 0.85rem; opacity: 0.7;
+    white-space: nowrap;
+  }
+  .demo-hint {
+    display: inline-block; font-size: 0.7rem; opacity: 0.35;
+    font-style: italic; margin-top: 2px;
+  }
+
+  /* Gallery grid */
+  .demo-gallery {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px; margin-top: 8px;
+  }
+  .demo-gallery-item {
+    aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+    position: relative; background-size: cover; background-position: center;
+  }
+  .demo-gallery-item .demo-gallery-label { display: none; }
+
+  /* Demo hero image */
+  #intro.has-hero {
+    position: relative !important; overflow: hidden !important; min-height: 85vh;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding-bottom: 48px;
+  }
+  #intro.has-hero .section-label,
+  #intro.has-hero .section-headline,
+  #intro.has-hero .section-body,
+  #intro.has-hero .section-detail { position: relative; z-index: 2; }
+  .demo-hero-img {
+    position: absolute !important; top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
+    background-size: cover; background-position: center;
+    z-index: 0 !important; border-radius: inherit;
+    animation: heroZoom 20s ease-out forwards;
+    transform-origin: center center;
+  }
+  @keyframes heroZoom {
+    from { transform: scale(1.15); }
+    to { transform: scale(1.0); }
+  }
+  .demo-img {
+    width: 100%; border-radius: 8px; overflow: hidden;
+    aspect-ratio: 16/9; margin: 16px 0;
+    background-size: cover; background-position: center;
+  }
+  .demo-features {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;
+  }
+  .demo-feature {
+    padding: 16px; border-radius: 8px;
+    border: 1px solid rgba(128,128,128,0.15);
+    background: rgba(128,128,128,0.04);
+  }
+  .demo-feature strong { display: block; margin-bottom: 4px; font-size: 0.85rem; }
+  .demo-feature p { font-size: 0.78rem; opacity: 0.6; line-height: 1.5; margin: 0; }
+  @media (max-width: 480px) { .demo-features { grid-template-columns: 1fr; } }
+
+  /* Reservation form mockup */
+  .demo-form { margin-top: 8px; }
+  .demo-form-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .demo-form-field {
+    padding: 12px; border-radius: 6px;
+    border: 1px solid rgba(128,128,128,0.2);
+    background: rgba(128,128,128,0.05);
+    font-size: 0.8rem; opacity: 0.5;
+    font-family: 'Familjen Grotesk', sans-serif;
+  }
+  .demo-form-field.full { grid-column: 1 / -1; }
+
+  /* Pull quote */
+  .demo-quote {
+    font-size: 1.3rem; line-height: 1.6; opacity: 0.7;
+    padding-left: 20px;
+    border-left: 2px solid currentColor;
+    margin: 16px 0;
+  }
+
+  /* Hours/info list */
+  .demo-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;
+  }
+  .demo-info-block h4 {
+    font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+    opacity: 0.4; margin-bottom: 8px;
+  }
+  .demo-info-block p {
+    font-size: 0.85rem; line-height: 1.6; opacity: 0.7;
+  }
+
+  /* Demo swipe nav */
+  .demo-nav {
+    position: fixed; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 160;
+    padding: 8px 16px; border-radius: 999px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .demo-nav.visible { opacity: 1; pointer-events: auto; }
+  .demo-nav button {
+    padding: 6px 14px; border-radius: 999px; border: none;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; transition: all 0.3s;
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+  }
+  .demo-nav button.active {
+    background: rgba(255,255,255,0.25); color: #fff;
+  }
+  .demo-nav button:hover { background: rgba(255,255,255,0.2); }
+
+  /* Designer card */
+  #designer textarea {
+    width: 100%; padding: 12px; font-size: 0.9rem; border-radius: 8px;
+    border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
+    color: inherit; font-family: 'Familjen Grotesk', sans-serif;
+    resize: vertical; min-height: 80px; outline: none; transition: border-color 0.3s;
+  }
+  #designer textarea:focus { border-color: rgba(128,128,128,0.6); }
+  #designer .designer-actions {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  #designer .designer-actions button {
+    padding: 10px 24px; font-size: 0.85rem; border-radius: 999px;
+    border: 1.5px solid currentColor; background: transparent;
+    color: inherit; cursor: pointer; font-family: 'Familjen Grotesk', sans-serif;
+    font-weight: 600; transition: opacity 0.3s, transform 0.2s;
+  }
+  #designer .designer-actions button:hover { opacity: 0.7; }
+  #designer .designer-actions button:active { transform: scale(0.97); }
+  #designer .designer-actions button.primary {
+    background: currentColor;
+  }
+  #designer .designer-actions button.primary span {
+    mix-blend-mode: difference;
+  }
+  #designer .designer-status {
+    margin-top: 12px; font-size: 0.8rem; font-family: 'Fira Code', monospace;
+    opacity: 0.6; min-height: 1.2em;
+  }
+
+  /* Demo mode back button */
+  #demo-back {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    z-index: 150;
+    padding: 10px 28px;
+    border-radius: 999px;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid currentColor;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.4s cubic-bezier(0.2,0,0,1), opacity 0.4s, background 0.3s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #demo-back.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #demo-back:hover { background: rgba(0,0,0,0.8); }
+
+  /* Demo mode transitions */
+  body.demo-active section {
+    animation: demoFadeIn 0.6s cubic-bezier(0.2,0,0,1) both;
+  }
+  body.demo-active #intro { animation-delay: 0s; }
+  body.demo-active #websites { animation-delay: 0.08s; }
+  body.demo-active #automations { animation-delay: 0.16s; }
+  body.demo-active #stack { animation-delay: 0.24s; }
+  body.demo-active #approach { animation-delay: 0.32s; }
+  body.demo-active #cta { animation-delay: 0.4s; }
+  @keyframes demoFadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  body.demo-switching #content {
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+  }
+  body.demo-active #content {
+    transition: opacity 0.3s ease-in;
+  }
+
+  /* Hide designer + mockup grid in demo mode */
+  body.demo-active #designer { display: none; }
+  body.demo-active .mockup-grid { display: none; }
+
+  /* Clickable mockup cards */
+  .mockup-card { cursor: pointer; }
+  .mockup-card:active { transform: scale(0.96); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Style transition wrapper */
+  #style-layer {
+    position: relative;
+    min-height: 100vh;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #style-layer.sliding-left {
+    transform: translateX(-100%);
+  }
+  #style-layer.sliding-right {
+    transform: translateX(100%);
+  }
+
+  /* Hand swipe tutorial */
+  #swipe-tutorial {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #swipe-tutorial.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #swipe-tutorial .hand {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%) scaleX(-1);
+    font-size: 72px;
+    opacity: 0;
+    z-index: 210;
+    filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
+    transition: right 1s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s;
+  }
+  #swipe-tutorial.active .hand {
+    opacity: 1;
+  }
+  #swipe-tutorial.active.dragging .hand {
+    right: calc(100% - 100px);
+  }
+  #swipe-tutorial .hint-text {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 1rem;
+    color: #fff;
+    text-align: center;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 24px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 210;
+  }
+  #swipe-tutorial.active .hint-text {
+    opacity: 1;
+  }
+
+  /* ── Full-screen Chat ── */
+  #fs-chat {
+    position: fixed; inset: 0;
+    z-index: 500;
+    background: rgba(8,8,12,0.92);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  #fs-chat.open { opacity: 1; pointer-events: auto; }
+
+  #fs-chat-close {
+    position: absolute; top: 20px; right: 24px;
+    background: none; border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 1.5rem; cursor: pointer;
+    transition: color 0.2s;
+    z-index: 2;
+  }
+  #fs-chat-close:hover { color: #fff; }
+
+  #fs-chat-scroll {
+    flex: 1; width: 100%; max-width: 520px;
+    overflow-y: auto; padding: 80px 24px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    scroll-behavior: smooth;
+  }
+  #fs-chat-scroll::-webkit-scrollbar { width: 3px; }
+  #fs-chat-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  .fc-msg {
+    max-width: 85%; padding: 12px 16px;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.92rem; line-height: 1.55;
+    border-radius: 16px;
+    animation: fcIn 0.3s cubic-bezier(0.2,0,0,1) both;
+  }
+  .fc-msg.bot {
+    align-self: flex-start;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.9);
+    border-bottom-left-radius: 4px;
+  }
+  .fc-msg.user {
+    align-self: flex-end;
+    background: #667eea;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  @keyframes fcIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .fc-typing {
+    align-self: flex-start;
+    display: flex; gap: 5px; padding: 14px 18px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px; border-bottom-left-radius: 4px;
+  }
+  .fc-typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    animation: fcDot 1.2s ease-in-out infinite;
+  }
+  .fc-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .fc-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes fcDot {
+    0%,60%,100% { transform: translateY(0); opacity: 0.35; }
+    30% { transform: translateY(-7px); opacity: 1; }
+  }
+
+  #fs-chat-qr {
+    width: 100%; max-width: 520px;
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 0 24px 8px;
+    justify-content: center;
+  }
+  #fs-chat-qr:empty { display: none; }
+  .fc-pill {
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.85);
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.82rem; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  .fc-pill:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
+  .fc-pill:active { transform: scale(0.95); }
+
+  #fs-chat-input-bar {
+    width: 100%; max-width: 520px;
+    display: flex; gap: 10px;
+    padding: 12px 24px 28px;
+  }
+  #fs-chat-input-bar.hidden { display: none; }
+  #fs-chat-input {
+    flex: 1; padding: 14px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.92rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  #fs-chat-input:focus { border-color: rgba(255,255,255,0.35); }
+  #fs-chat-input::placeholder { color: rgba(255,255,255,0.3); }
+  #fs-chat-send {
+    width: 48px; height: 48px;
+    border-radius: 50%; border: none;
+    background: #667eea; color: #fff;
+    font-size: 1.2rem; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.2s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  #fs-chat-send:hover { opacity: 0.85; }
+  #fs-chat-send:active { transform: scale(0.9); }
+
+  /* Progress bar inside chat */
+  #fs-chat-progress {
+    width: 100%; max-width: 520px;
+    padding: 0 24px 20px;
+    display: none;
+  }
+  #fs-chat-progress.active { display: block; }
+  .fc-progress-bar {
+    height: 4px; border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+  .fc-progress-fill {
+    height: 100%; width: 0%;
+    border-radius: 4px;
+    background: #667eea;
+    transition: width 0.3s ease;
+  }
+  .fc-progress-text {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* ── Iframe Demo Overlay ── */
+  #demo-iframe-wrap {
+    position: fixed; inset: 0;
+    z-index: 400;
+    background: #000;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #demo-iframe-wrap.open { opacity: 1; pointer-events: auto; }
+  #demo-iframe-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.9);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  #demo-iframe-bar span {
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.8rem; color: rgba(255,255,255,0.5);
+  }
+  #demo-iframe-bar button {
+    padding: 6px 18px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #demo-iframe-bar button:hover { background: rgba(255,255,255,0.15); }
+  #demo-iframe-frame {
+    flex: 1; width: 100%; border: none;
+    background: #fff;
+  }
+
+  /* Lead capture floating CTA (over iframe) */
+  #lead-capture-cta {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    z-index: 450;
+    padding: 14px 32px;
+    border-radius: 999px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem; font-weight: 700;
+    cursor: pointer; border: none;
+    color: #fff;
+    background: #667eea;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.2,0,0,1), opacity 0.3s;
+    pointer-events: none;
+  }
+  #lead-capture-cta.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #lead-capture-cta:hover { filter: brightness(1.1); }
+  #lead-capture-cta:active { transform: translateX(-50%) scale(0.96); }
+</style>
+</head>
+<body>
+
+<div id="style-layer">
+<div id="overlay"></div>
+
+<div id="topbar">
+  <span class="name">Tobias Bouw</span>
+  <button class="cta-link" onclick="chatOpen()">Work with me</button>
+</div>
+
+<main id="content">
+  <section id="intro">
+    <div class="section-label">tobiasbouw.com</div>
+    <h1 class="section-headline">I build websites<br>& automations for small businesses.</h1>
+    <p class="section-body">Swipe left or right to see how this entire page transforms. Each style is a world I can build for you. Scroll down to explore what I offer.</p>
+    <div class="section-detail">
+      <div class="tagline">1 project per week · Done in days, not months</div>
+    </div>
+  </section>
+
+  <section id="websites">
+    <div class="section-label">Websites</div>
+    <h2 class="section-headline">Your website shouldn't need an explanation.</h2>
+    <p class="section-body">I strip away everything your visitors don't need. What's left loads fast, reads clear, and hits hard. The kind of site that makes your competitor google "who built that."</p>
+    <div class="section-detail">
+      <div class="mockup-grid" id="website-mockups">
+        <div class="mockup-card">
+          <div class="mockup-preview restaurant">
+            <div class="ui-element time-badge">20:00 · TABLE FOR 2</div>
+            <div class="ui-element menu-card"><span></span><span></span><span></span><span></span></div>
+            <div class="card-content">
+              <div class="card-title">La Maison</div>
+              <div class="card-sub">Fine dining · Reservations · Full experience</div>
+              <div class="card-cta">See the demo →</div>
+            </div>
+          </div>
+        </div>
+        <div class="mockup-card">
+          <div class="mockup-preview nightclub">
+            <div class="ui-element ticket-badge">FRI · 23:00 · TICKETS LIVE</div>
+            <div class="ui-element eq-bars"><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="card-content">
+              <div class="card-title">VOID</div>
+              <div class="card-sub">Events · Tickets · Guest lists</div>
+              <div class="card-cta">See the demo →</div>
+            </div>
+          </div>
+        </div>
+        <div class="mockup-card">
+          <div class="mockup-preview ecommerce">
+            <div class="shop-ui">
+              <div class="shop-badge">NEW COLLECTION</div>
+              <div class="shop-cart"><div class="dot"></div> BAG (3)</div>
+            </div>
+            <div class="card-content">
+              <div class="card-title">Maison Noir</div>
+              <div class="card-sub">Products · Cart · Inventory</div>
+              <div class="card-cta">See the demo →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="automations">
+    <div class="section-label">AI Automations</div>
+    <h2 class="section-headline">Your website should work for you.</h2>
+    <p class="section-body">Automated emails. Cost tracking that updates itself. Follow-ups that don't slip through the cracks. Set it up once, forget about it.</p>
+    <div class="section-detail" id="automation-detail"></div>
+  </section>
+
+  <section id="stack">
+    <div class="section-label">Tech Stack</div>
+    <h2 class="section-headline">One person. The whole thing.</h2>
+    <p class="section-body">Design, code, automation, launch. You get one person who handles everything — no agencies, no middlemen, no monthly retainers you don't understand.</p>
+    <div class="section-detail">
+      <div class="tag-row" id="stack-tags"></div>
+    </div>
+  </section>
+
+  <section id="approach">
+    <div class="section-label">Approach</div>
+    <h2 class="section-headline">Structure. System. Clarity.</h2>
+    <p class="section-body">Every project follows the same proven process. Research what your customers actually need. Design where every element earns its place. Build with clean code that loads fast.</p>
+    <div class="section-detail" id="approach-detail"></div>
+  </section>
+
+  <section id="designer">
+    <div class="section-label">Custom Design</div>
+    <h2 class="section-headline">Can't find your vibe?</h2>
+    <p class="section-body">Tell me what you're after and I'll design it on the spot. Type a mood, a reference, or just a feeling — and watch the page transform.</p>
+    <div class="section-detail">
+      <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
+      <div class="designer-actions">
+        <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
+        <button id="ai-reset" onclick="resetDesign()">Reset</button>
+      </div>
+      <div class="designer-status" id="ai-status"></div>
+    </div>
+  </section>
+
+  <section id="cta">
+    <div class="section-label">Let's Talk</div>
+    <h2 class="section-headline">Ready to build yours?</h2>
+    <p class="section-body">Whether you need a landing page, booking system, or automations that save you hours every week — let's make it happen. I take on one project per week. If you're ready, let's talk.</p>
+    <div class="section-detail">
+      <button class="cta-button" id="cta-button" onclick="chatOpen()" style="display:inline-block;margin-top:8px;padding:14px 32px;border:none;border-radius:999px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:transform 0.3s">Let's build yours →</button>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="swipe-tutorial">
+  <div class="hand">🤚</div>
+  <div class="hint-text">Swipe to change style</div>
+</div>
+
+<button id="demo-back" onclick="exitDemo()">← Back to portfolio</button>
+<div class="demo-nav" id="demo-nav">
+  <button onclick="enterDemo('restaurant')" data-demo="restaurant">Restaurant</button>
+  <button onclick="enterDemo('nightclub')" data-demo="nightclub">Nightclub</button>
+  <button onclick="enterDemo('ecommerce')" data-demo="ecommerce">E-commerce</button>
+</div>
+
+<div id="style-toast">Default</div>
+
+<div id="fs-chat">
+  <button id="fs-chat-close" onclick="chatClose()">&times;</button>
+  <div id="fs-chat-scroll"></div>
+  <div id="fs-chat-qr"></div>
+  <div id="fs-chat-progress">
+    <div class="fc-progress-bar"><div class="fc-progress-fill" id="fc-progress-fill"></div></div>
+    <div class="fc-progress-text" id="fc-progress-text"></div>
+  </div>
+  <div id="fs-chat-input-bar">
+    <input type="text" id="fs-chat-input" placeholder="Type here..." autocomplete="off">
+    <button id="fs-chat-send" onclick="chatSend()">→</button>
+  </div>
+</div>
+
+<div id="demo-iframe-wrap">
+  <div id="demo-iframe-bar">
+    <span id="demo-iframe-label">Preview</span>
+    <button onclick="closeIframeDemo()">← Back to portfolio</button>
+  </div>
+  <iframe id="demo-iframe-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+</div>
+
+<button id="lead-capture-cta" onclick="saveLead()">Love it? Let's talk →</button>
+
+<script>
+window.onerror = function(msg, url, line, col, err) {
+  document.title = 'ERR L' + line + ': ' + msg;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:red;color:#fff;padding:12px;font-size:13px;font-family:monospace;word-break:break-all';
+  d.textContent = 'JS Error line ' + line + ': ' + msg;
+  document.body.appendChild(d);
+};
+</script>
+<script>
+const styles = [
+  {
+    // Sleek dark agency — shows: professional restraint, modern dark UI
+    name: 'Midnight Studio',
+    bg: '#08080a', fg: '#f0f0f0', accent: '#555',
+    cardBg: 'rgba(255,255,255,0.02)', cardBorder: '1px solid rgba(255,255,255,0.06)',
+    labelFont: 'Fira Code', headlineFont: 'Syne', headlineWeight: 800, headlineSize: 'clamp(2rem,6vw,3.5rem)',
+    bodyFont: 'Familjen Grotesk', bodyColor: '#888',
+    indicatorBg: 'rgba(255,255,255,0.08)',
+    overlay: 'none'
+  },
+  {
+    // Raw anti-design — shows: bold conceptual thinking, rule-breaking
+    name: 'Brutalist',
+    bg: '#fff', fg: '#000', accent: '#000',
+    cardBg: '#fff', cardBorder: '3px solid #000', cardShadow: '6px 6px 0 #000',
+    labelFont: 'Courier Prime', headlineFont: 'Unbounded', headlineWeight: 900, headlineSize: 'clamp(1.8rem,5vw,3rem)',
+    bodyFont: 'Courier Prime', bodyColor: '#333',
+    indicatorBg: '#000', indicatorFg: '#fff',
+    overlay: 'none'
+  },
+  {
+    // Fashion editorial — shows: luxury branding, editorial layout
+    name: 'Haute Couture',
+    bg: '#f5f0e8', fg: '#1a1a1a', accent: '#b8986e',
+    cardBg: 'transparent', cardBorder: 'none', cardBorderLeft: '2px solid #b8986e',
+    labelFont: 'Familjen Grotesk', headlineFont: 'DM Serif Display', headlineWeight: 400, headlineSize: 'clamp(2rem,5.5vw,3.2rem)',
+    bodyFont: 'Instrument Serif', bodyColor: '#666',
+    indicatorBg: '#1a1a1a', indicatorFg: '#f5f0e8',
+    overlay: 'none'
+  },
+  {
+    // Hacker aesthetic — shows: themed immersive experiences
+    name: 'Terminal',
+    bg: '#0c0c0c', fg: '#00ff41', accent: '#00ff41',
+    cardBg: 'rgba(0,255,65,0.02)', cardBorder: '1px solid rgba(0,255,65,0.15)',
+    labelFont: 'Fira Code', headlineFont: 'Fira Code', headlineWeight: 700, headlineSize: 'clamp(1.4rem,4vw,2.2rem)',
+    bodyFont: 'Fira Code', bodyColor: '#00cc33',
+    indicatorBg: 'rgba(0,255,65,0.1)',
+    overlay: 'scanlines'
+  },
+  {
+    // Modern UI depth — shows: glassmorphism, layered interfaces
+    name: 'Glass',
+    bg: 'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#e96ead 100%)', fg: '#fff', accent: '#fff',
+    cardBg: 'rgba(255,255,255,0.12)', cardBorder: '1px solid rgba(255,255,255,0.25)', cardBlur: true,
+    labelFont: 'Familjen Grotesk', headlineFont: 'Syne', headlineWeight: 700, headlineSize: 'clamp(1.8rem,5vw,3rem)',
+    bodyFont: 'Familjen Grotesk', bodyColor: 'rgba(255,255,255,0.85)',
+    indicatorBg: 'rgba(255,255,255,0.2)',
+    overlay: 'none'
+  },
+  {
+    // Trendy bold — shows: current design trends, energy
+    name: 'Neobrutalism',
+    bg: '#d4f542', fg: '#1a1a1a', accent: '#ff5757',
+    cardBg: '#fff', cardBorder: '3px solid #1a1a1a', cardShadow: '8px 8px 0 #1a1a1a',
+    labelFont: 'Syne', headlineFont: 'Unbounded', headlineWeight: 700, headlineSize: 'clamp(1.6rem,5vw,2.8rem)',
+    bodyFont: 'Zilla Slab', bodyColor: '#333',
+    indicatorBg: '#fff', indicatorBorder: '3px solid #1a1a1a',
+    overlay: 'none'
+  },
+  {
+    // Ultra-minimal — shows: negative space, restraint, zen philosophy
+    name: 'Zen',
+    bg: '#fafaf7', fg: '#2a2a2a', accent: '#ccc',
+    cardBg: 'transparent', cardBorder: 'none',
+    labelFont: 'Noto Serif JP', headlineFont: 'Noto Serif JP', headlineWeight: 300, headlineSize: 'clamp(1.8rem,5vw,2.8rem)',
+    bodyFont: 'Noto Serif JP', bodyColor: '#999',
+    indicatorBg: 'rgba(0,0,0,0.04)',
+    textAlign: 'center',
+    overlay: 'none'
+  },
+  {
+    // Retro-futurism — shows: immersive theming, neon, atmosphere
+    name: 'Synthwave',
+    bg: '#0d0221', fg: '#fff', accent: '#ff2975',
+    cardBg: 'rgba(255,41,117,0.05)', cardBorder: '1px solid rgba(255,41,117,0.3)', cardGlow: '0 0 20px rgba(255,41,117,0.15)',
+    labelFont: 'Orbitron', headlineFont: 'Orbitron', headlineWeight: 900, headlineSize: 'clamp(1.5rem,4vw,2.5rem)',
+    headlineGradient: 'linear-gradient(180deg,#ff6ec7,#ff2975)',
+    bodyFont: 'Familjen Grotesk', bodyColor: '#c4b5fd',
+    indicatorBg: 'rgba(255,41,117,0.2)',
+    overlay: 'grid'
+  },
+  {
+    // Postmodern graphic — shows: bold color, pattern, playfulness
+    name: 'Memphis',
+    bg: '#ff6b6b', fg: '#fff', accent: '#feca57',
+    cardBg: 'rgba(255,255,255,0.15)', cardBorder: '3px solid #fff',
+    labelFont: 'Syne', headlineFont: 'Unbounded', headlineWeight: 900, headlineSize: 'clamp(1.8rem,5vw,3rem)',
+    bodyFont: 'Syne', bodyColor: 'rgba(255,255,255,0.9)',
+    indicatorBg: '#fff', indicatorFg: '#ff6b6b',
+    overlay: 'memphis'
+  },
+  {
+    // 1920s elegance — shows: period design, sophistication, gold
+    name: 'Art Deco',
+    bg: '#0a1628', fg: '#d4af37', accent: '#d4af37',
+    cardBg: 'rgba(212,175,55,0.04)', cardBorder: 'none', cardBorderTop: '2px solid #d4af37',
+    labelFont: 'Familjen Grotesk', headlineFont: 'DM Serif Display', headlineWeight: 400, headlineSize: 'clamp(2rem,6vw,3.5rem)',
+    bodyFont: 'Familjen Grotesk', bodyColor: '#8a7a52',
+    indicatorBg: '#d4af37', indicatorFg: '#0a1628',
+    overlay: 'none'
+  },
+  {
+    // Vintage warmth — shows: earthy palettes, analog/tactile feel
+    name: 'Warm Analog',
+    bg: '#3d2b1f', fg: '#f4e4c1', accent: '#e07a3a',
+    cardBg: 'rgba(224,122,58,0.06)', cardBorder: '1px solid rgba(224,122,58,0.2)',
+    labelFont: 'Courier Prime', headlineFont: 'Zilla Slab', headlineWeight: 700, headlineSize: 'clamp(1.8rem,5vw,3rem)',
+    bodyFont: 'Instrument Serif', bodyColor: '#c4a882',
+    indicatorBg: 'rgba(224,122,58,0.3)',
+    overlay: 'none'
+  },
+  {
+    // Youthful energy — shows: vibrant color, playful branding
+    name: 'Candy Pop',
+    bg: '#7b2ff7', fg: '#fff', accent: '#ff6ec7',
+    cardBg: 'rgba(255,255,255,0.08)', cardBorder: '2px solid rgba(255,255,255,0.2)', cardBlur: true, cardShadow: '0 8px 32px rgba(123,47,247,0.3)',
+    labelFont: 'Syne', headlineFont: 'Syne', headlineWeight: 800, headlineSize: 'clamp(2rem,6vw,3.5rem)',
+    headlineGradient: 'linear-gradient(90deg,#fff,#ff6ec7)',
+    bodyFont: 'Familjen Grotesk', bodyColor: 'rgba(255,255,255,0.8)',
+    indicatorBg: '#ff6ec7', indicatorFg: '#fff',
+    overlay: 'none'
+  }
+];
+
+let current = 0;
+let busy = false;
+const overlay = document.getElementById('overlay');
+const topbar = document.getElementById('topbar');
+const toast = document.getElementById('style-toast');
+const sections = document.querySelectorAll('section');
+let toastTimeout = null;
+
+// Show toast with style name
+function showToast(name, style) {
+  toast.textContent = name;
+  toast.style.background = style.indicatorBg || 'rgba(0,0,0,0.5)';
+  toast.style.color = style.indicatorFg || style.fg;
+  toast.classList.add('show');
+
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 1500);
+}
+
+// Build static content
+document.getElementById('stack-tags').innerHTML = ['React', 'Next.js', 'Python', 'AI APIs', 'Tailwind'].map(t => `<span class="tag-item">${t}</span>`).join('');
+
+const automationLines = [
+  '$ tobias deploy --client yourbusiness',
+  '→ Connecting forms to your inbox...',
+  '→ Setting up automated follow-ups...',
+  '→ Syncing cost tracking...',
+  '✓ Done. Everything in its place.'
+];
+document.getElementById('automation-detail').innerHTML = `<div class="terminal-box">${automationLines.map(l => `<div>${l}</div>`).join('')}<span class="cursor"></span></div>`;
+
+document.getElementById('approach-detail').innerHTML = `
+  <div class="process-grid">
+    <div class="process-item"><strong>Research</strong><span>What do your users actually need?</span></div>
+    <div class="process-item"><strong>Design</strong><span>Every element earns its place.</span></div>
+    <div class="process-item"><strong>Build</strong><span>Clean code. Fast load. Done.</span></div>
+  </div>
+`;
+
+function applyStyle(s) {
+  // Body
+  document.body.style.background = s.bg;
+  document.body.style.color = s.fg;
+
+  // Topbar
+  topbar.style.color = s.fg;
+
+  // Sections
+  sections.forEach(sec => {
+    sec.style.background = s.cardBg;
+    sec.style.border = s.cardBorder;
+    sec.style.boxShadow = s.cardShadow || s.cardGlow || 'none';
+    sec.style.borderLeft = s.cardBorderLeft || (s.cardBorder !== 'none' ? '' : 'none');
+    sec.style.backdropFilter = s.cardBlur ? 'blur(20px)' : 'none';
+    sec.style.webkitBackdropFilter = s.cardBlur ? 'blur(20px)' : 'none';
+    sec.style.textAlign = s.textAlign || 'left';
+    sec.style.borderRadius = s.cardBorder && s.cardBorder !== 'none' ? '8px' : '0';
+
+    const label = sec.querySelector('.section-label');
+    const headline = sec.querySelector('.section-headline');
+    const body = sec.querySelector('.section-body');
+
+    if (label) label.style.fontFamily = `'${s.labelFont}', sans-serif`;
+    if (headline) {
+      headline.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+      headline.style.fontWeight = s.headlineWeight;
+      headline.style.fontSize = s.headlineSize;
+      if (s.headlineGradient) {
+        headline.style.background = s.headlineGradient;
+        headline.style.webkitBackgroundClip = 'text';
+        headline.style.webkitTextFillColor = 'transparent';
+        headline.style.backgroundClip = 'text';
+      } else {
+        headline.style.background = 'none';
+        headline.style.webkitBackgroundClip = 'unset';
+        headline.style.webkitTextFillColor = 'unset';
+      }
+    }
+    if (body) {
+      body.style.fontFamily = `'${s.bodyFont}', serif`;
+      body.style.color = s.bodyColor;
+      body.style.margin = s.textAlign === 'center' ? '0 auto' : '0';
+    }
+  });
+
+  // Tags
+  document.querySelectorAll('.tag-item').forEach(tag => {
+    tag.style.background = s.cardBorder && s.cardBorder !== 'none' ? s.fg : 'rgba(128,128,128,0.15)';
+    tag.style.color = s.cardBorder && s.cardBorder !== 'none' ? s.bg : s.fg;
+    tag.style.fontFamily = `'${s.labelFont}', monospace`;
+  });
+
+  // Mockup cards
+  document.querySelectorAll('.mockup-card').forEach(card => {
+    card.style.background = s.cardBg;
+    card.style.border = s.cardBorder;
+    card.style.boxShadow = s.cardShadow || 'none';
+    card.style.color = s.accent;
+  });
+  document.querySelectorAll('.mockup-card-label').forEach(lbl => {
+    lbl.style.fontFamily = `'${s.labelFont}', sans-serif`;
+    lbl.style.color = s.fg;
+  });
+
+  // Terminal box
+  const termBox = document.querySelector('.terminal-box');
+  if (termBox) {
+    termBox.style.fontFamily = `'${s.labelFont}', monospace`;
+    termBox.style.fontSize = '0.8rem';
+    termBox.style.lineHeight = '1.8';
+    termBox.style.padding = '16px';
+    termBox.style.background = s.name === 'Terminal' ? 'rgba(0,255,65,0.03)' : 'rgba(128,128,128,0.1)';
+    termBox.style.border = `1px solid ${s.accent}33`;
+    termBox.style.borderRadius = '4px';
+    termBox.style.color = s.accent;
+  }
+  const cursor = document.querySelector('.cursor');
+  if (cursor) {
+    cursor.style.cssText = `display:inline-block;width:8px;height:14px;background:${s.accent};animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-top:8px`;
+  }
+
+  // Process grid
+  const processGrid = document.querySelector('.process-grid');
+  if (processGrid) {
+    processGrid.style.cssText = `display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-top:8px`;
+  }
+  document.querySelectorAll('.process-item').forEach(item => {
+    item.style.padding = '16px';
+    item.style.borderTop = `3px solid ${s.accent}`;
+    item.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    item.querySelector('strong').style.display = 'block';
+    item.querySelector('strong').style.marginBottom = '4px';
+    item.querySelector('span').style.fontSize = '0.85rem';
+    item.querySelector('span').style.opacity = '0.7';
+  });
+
+  // Tagline
+  const tagline = document.querySelector('.tagline');
+  if (tagline) {
+    tagline.style.fontFamily = `'${s.labelFont}', monospace`;
+    tagline.style.fontSize = '0.8rem';
+    tagline.style.opacity = '0.5';
+    tagline.style.marginTop = '16px';
+  }
+
+  // CTA button
+  const ctaBtn = document.getElementById('cta-button');
+  if (ctaBtn) {
+    ctaBtn.style.background = s.accent;
+    ctaBtn.style.color = s.bg || '#fff';
+    ctaBtn.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+  }
+
+  // Overlay
+  overlay.style.transform = 'none';
+  overlay.style.top = '0';
+  if (s.overlay === 'scanlines') {
+    overlay.style.opacity = '1';
+    overlay.style.background = 'repeating-linear-gradient(transparent,transparent 2px,rgba(0,255,65,0.03) 2px,rgba(0,255,65,0.03) 4px)';
+  } else if (s.overlay === 'grid') {
+    overlay.style.opacity = '1';
+    overlay.style.background = 'repeating-linear-gradient(90deg,#ff297518 0px,transparent 1px,transparent 80px),repeating-linear-gradient(0deg,#ff297518 0px,transparent 1px,transparent 80px)';
+    overlay.style.transform = 'perspective(400px) rotateX(35deg)';
+    overlay.style.transformOrigin = 'bottom';
+    overlay.style.top = '45%';
+  } else if (s.overlay === 'memphis') {
+    overlay.style.opacity = '1';
+    overlay.style.background = 'radial-gradient(circle 10px at 12% 20%,#feca5744 50%,transparent 50%),radial-gradient(circle 14px at 85% 12%,#48dbfb44 50%,transparent 50%),radial-gradient(circle 8px at 55% 75%,#ff9ff344 50%,transparent 50%),radial-gradient(circle 12px at 20% 85%,#1dd1a144 50%,transparent 50%)';
+  } else {
+    overlay.style.opacity = '0';
+  }
+
+  // Update chat accent color
+  if (typeof applyChatStyles === 'function') applyChatStyles();
+}
+
+// Initial render
+applyStyle(styles[0]);
+
+// Tutorial state (persist across refreshes)
+let tutorialShown = !!localStorage.getItem('tbouw_tutorial_done');
+const tutorial = document.getElementById('swipe-tutorial');
+const styleLayer = document.getElementById('style-layer');
+
+// Slow slide transition (for tutorial only)
+function slideToStyle(newIndex, direction) {
+  if (busy || newIndex < 0 || newIndex >= styles.length || newIndex === current) return;
+  busy = true;
+
+  const slideOut = direction > 0 ? 'sliding-left' : 'sliding-right';
+  const slideIn = direction > 0 ? 'sliding-right' : 'sliding-left';
+
+  // Slide current style out
+  styleLayer.classList.add(slideOut);
+
+  setTimeout(() => {
+    // Apply new style while off-screen
+    current = newIndex;
+    applyStyle(styles[current]);
+    showToast(styles[current].name, styles[current]);
+    resetScrollAnimations();
+
+    // Position for slide in
+    styleLayer.classList.remove(slideOut);
+    styleLayer.classList.add(slideIn);
+    styleLayer.style.transition = 'none';
+
+    // Force reflow
+    styleLayer.offsetHeight;
+
+    // Slide in
+    styleLayer.style.transition = '';
+    styleLayer.classList.remove(slideIn);
+
+    setTimeout(() => busy = false, 600);
+  }, 600);
+}
+
+// Instant style change (for manual swipes)
+function instantChange(newIndex) {
+  if (newIndex < 0 || newIndex >= styles.length || newIndex === current) return;
+  current = newIndex;
+  applyStyle(styles[current]);
+  showToast(styles[current].name, styles[current]);
+  resetScrollAnimations();
+}
+
+function goTo(i) {
+  instantChange(i);
+}
+
+function go(d) {
+  instantChange(current + d);
+}
+
+// Tutorial runs ONCE, 2 seconds after page load - no scroll triggers
+setTimeout(() => {
+  if (tutorialShown) return;
+  tutorialShown = true;
+  localStorage.setItem('tbouw_tutorial_done', '1');
+
+  // Show tutorial with hand
+  tutorial.classList.add('active');
+
+  // Start dragging animation
+  setTimeout(() => {
+    tutorial.classList.add('dragging');
+
+    // Slide to next style
+    setTimeout(() => {
+      slideToStyle(1, 1);
+    }, 400);
+
+    // Hide tutorial
+    setTimeout(() => {
+      tutorial.classList.remove('active', 'dragging');
+    }, 1200);
+  }, 600);
+}, 2000);
+
+// Click to skip tutorial
+tutorial.addEventListener('click', () => {
+  if (tutorial.classList.contains('active')) {
+    tutorial.classList.remove('active', 'dragging');
+    instantChange(1);
+  }
+});
+
+// Keyboard navigation (skip if focused in an input/textarea)
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+// Touch swipe (only if horizontal > vertical movement)
+let tx = 0, ty = 0;
+document.addEventListener('touchstart', e => {
+  tx = e.changedTouches[0].screenX;
+  ty = e.changedTouches[0].screenY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].screenX - tx;
+  const dy = e.changedTouches[0].screenY - ty;
+  // Only trigger if horizontal swipe, not vertical scroll
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+    go(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
+
+// Scroll animations
+const animatedElements = [];
+
+function setupScrollAnimations() {
+  // Add animation classes to sections
+  sections.forEach((sec, i) => {
+    sec.classList.add('animate-on-scroll');
+    if (i > 0) sec.classList.add('delay-' + Math.min(i, 2));
+    animatedElements.push(sec);
+  });
+
+  // Add stagger animation to tag rows
+  document.querySelectorAll('.tag-row').forEach(row => {
+    row.classList.add('animate-stagger');
+    animatedElements.push(row);
+  });
+
+  // Add animation to terminal box
+  const termBox = document.querySelector('.terminal-box');
+  if (termBox) {
+    termBox.classList.add('animate-on-scroll');
+    animatedElements.push(termBox);
+  }
+
+  // Add animation to process grid
+  const processGrid = document.querySelector('.process-grid');
+  if (processGrid) {
+    processGrid.classList.add('animate-stagger');
+    animatedElements.push(processGrid);
+  }
+}
+
+function resetScrollAnimations() {
+  // Remove visible class from all animated elements
+  animatedElements.forEach(el => {
+    el.classList.remove('visible');
+  });
+
+  // Re-observe all elements
+  setTimeout(() => {
+    animatedElements.forEach(el => {
+      scrollObserver.observe(el);
+    });
+  }, 100);
+}
+
+// IntersectionObserver for scroll animations
+const scrollObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      scrollObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+// Initialize scroll animations
+setupScrollAnimations();
+animatedElements.forEach(el => scrollObserver.observe(el));
+
+// --- Industry Demo Takeover ---
+const industries = {
+  restaurant: {
+    style: {
+      name: 'La Maison',
+      bg: '#1a110c', fg: '#f4e8d8', accent: '#d4a574',
+      cardBg: 'rgba(212,165,116,0.04)', cardBorder: 'none', cardBorderLeft: '2px solid #d4a574',
+      labelFont: 'Familjen Grotesk', headlineFont: 'DM Serif Display', headlineWeight: 400, headlineSize: 'clamp(2rem,5.5vw,3.2rem)',
+      bodyFont: 'Instrument Serif', bodyColor: '#a89070',
+      indicatorBg: '#d4a574', indicatorFg: '#1a110c',
+      overlay: 'none'
+    },
+    topbarName: 'La Maison',
+    heroImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=800&fit=crop&auto=format&q=80',
+    heroOverlay: 'linear-gradient(180deg, rgba(26,17,12,0.15) 0%, rgba(26,17,12,0.85) 100%)',
+    content: {
+      intro: {
+        label: 'la maison',
+        headline: 'Where every evening<br>becomes a memory.',
+        body: 'Fine dining in the heart of the city. Seasonal ingredients, timeless technique, an atmosphere you won\'t forget.',
+        detail: '<div class="demo-hero-sub">OPEN TUE–SUN · 18:00–23:00 · RESERVATIONS RECOMMENDED</div><a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#d4a574;color:#1a110c;">Reserve a table →</a>'
+      },
+      websites: {
+        label: 'The Menu',
+        headline: '',
+        body: '',
+        detail: `<div class="demo-menu">
+          <div class="demo-menu-cat"><h3>Starters</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Think out your concept</span><div class="demo-dish-desc">We sit down, map your brand, your audience, your vibe. Everything starts here.</div></div><span class="demo-dish-price">Day 1</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Meet for possibilities</span><div class="demo-dish-desc">What if reservations ran themselves? What if no-shows dropped 40%? We explore what's possible.</div></div><span class="demo-dish-price">Day 1</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Main Course</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Design, build, ship</span><div class="demo-dish-desc">Full website — menu, reservations, story, gallery. Mobile-perfect. Built at relentless pace.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Automations & integrations</span><div class="demo-dish-desc">SMS reminders, review requests, smart waitlists, Google Maps — everything wired up and running.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Dessert</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Launch & handover</span><div class="demo-dish-desc">Your site goes live. I walk you through everything. You own it all.</div></div><span class="demo-dish-price">Day 6–7</span></div>
+          </div>
+        </div>`
+      },
+      automations: {
+        label: 'You Own It',
+        headline: 'Send an email.<br>See it happen.',
+        body: 'No developer needed for updates. Email a change and your site updates. New dish? Updated hours? Seasonal menu? Done in minutes, not days.',
+        detail: `<div class="demo-features">
+          <div class="demo-feature"><strong>Update your menu</strong><p>"Remove the duck, add lamb rack €36." You send the email, your site updates. That simple.</p></div>
+          <div class="demo-feature"><strong>Change your hours</strong><p>Closed for a private event? Holiday hours? One email and your site reflects it instantly.</p></div>
+          <div class="demo-feature"><strong>Auto review requests</strong><p>Guest fills in the contact form? They get an automatic follow-up asking for a Google review.</p></div>
+          <div class="demo-feature"><strong>Reservation notifications</strong><p>Someone books a table? You get an email and a confirmation goes out automatically. No missed bookings.</p></div>
+        </div>`
+      },
+      stack: {
+        label: 'What\'s Included',
+        headline: 'Everything. Handled.',
+        body: '',
+        detail: `<div class="demo-img" style="background-image:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=450&fit=crop&auto=format&q=80')"></div>
+        <div class="demo-features">
+          <div class="demo-feature"><strong>Full website</strong><p>Menu, reservations, story, gallery — one fast-loading page.</p></div>
+          <div class="demo-feature"><strong>Mobile-first</strong><p>90% of guests check on their phone. It looks perfect there.</p></div>
+          <div class="demo-feature"><strong>Google Maps</strong><p>Integrated directions, click-to-navigate, embedded map.</p></div>
+          <div class="demo-feature"><strong>Analytics</strong><p>Know where visitors come from and which dishes they look at most.</p></div>
+        </div>`
+      },
+      approach: {
+        label: 'Reserve',
+        headline: 'Book your table.',
+        body: '',
+        detail: `<div class="demo-form">
+          <div class="demo-form-row"><div class="demo-form-field">Date</div><div class="demo-form-field">Time</div></div>
+          <div class="demo-form-row"><div class="demo-form-field">Guests</div><div class="demo-form-field">Name</div></div>
+          <div class="demo-form-row"><div class="demo-form-field full">Special requests or dietary requirements</div></div>
+          <a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#d4a574;color:#1a110c;margin-top:8px">Confirm reservation →</a>
+        </div>
+        <div class="demo-info-grid">
+          <div class="demo-info-block"><h4>Hours</h4><p>Tue–Thu: 18:00–22:00<br>Fri–Sat: 18:00–23:00<br>Sun: 17:00–21:00</p></div>
+          <div class="demo-info-block"><h4>Location</h4><p>Your address here<br>Your city<br>Google Maps integration</p></div>
+        </div>`
+      },
+      cta: {
+        label: 'Built by Tobias Bouw',
+        headline: 'This could be<br>your restaurant.',
+        body: 'The menu, the reservations, the automated reminders, the review machine — I build this in days. One person. The whole thing.',
+        ctaText: 'Let\'s build yours →'
+      }
+    },
+    tags: {}
+  },
+  nightclub: {
+    style: {
+      name: 'VOID CLUB',
+      bg: '#08080f', fg: '#fff', accent: '#c44dff',
+      cardBg: 'rgba(196,77,255,0.04)', cardBorder: '1px solid rgba(196,77,255,0.2)', cardGlow: '0 0 25px rgba(196,77,255,0.1)',
+      labelFont: 'Orbitron', headlineFont: 'Unbounded', headlineWeight: 900, headlineSize: 'clamp(1.6rem,5vw,2.8rem)',
+      bodyFont: 'Familjen Grotesk', bodyColor: '#a88bcc',
+      indicatorBg: '#c44dff', indicatorFg: '#fff',
+      overlay: 'none'
+    },
+    topbarName: 'VOID CLUB',
+    heroImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&h=800&fit=crop&auto=format&q=80',
+    heroOverlay: 'linear-gradient(180deg, rgba(8,8,15,0.2) 0%, rgba(8,8,15,0.9) 100%)',
+    content: {
+      intro: {
+        label: 'void club',
+        headline: 'The night<br>starts here.',
+        body: 'Every Friday & Saturday. The hardest door, the loudest sound, the nights you won\'t remember but can\'t forget.',
+        detail: '<div class="demo-hero-sub">FRI & SAT · 23:00–06:00 · TICKETS ON SALE NOW</div><a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#c44dff;color:#fff;box-shadow:0 0 20px rgba(196,77,255,0.4)">Get tickets →</a>'
+      },
+      websites: {
+        label: 'The Lineup',
+        headline: '',
+        body: '',
+        detail: `<div class="demo-menu">
+          <div class="demo-menu-cat"><h3>Opening Act</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Your vision, decoded</span><div class="demo-dish-desc">We break down your brand, your crowd, your sound. Every detail mapped before a single pixel moves.</div></div><span class="demo-dish-price">Day 1</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Scope the systems</span><div class="demo-dish-desc">Tickets, guestlists, promoter tools, post-event flows — we plan every automation your venue needs.</div></div><span class="demo-dish-price">Day 1</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Main Set</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Design & build</span><div class="demo-dish-desc">Event pages, ticket sales, photo galleries, mobile-first — your entire digital presence, built at full volume.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Wire the automations</span><div class="demo-dish-desc">Dynamic pricing, capacity tracking, promoter dashboards, post-event emails — all running on autopilot.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Encore</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Go live</span><div class="demo-dish-desc">Your site launches. First event listed. Tickets selling. I stick around until the system runs itself.</div></div><span class="demo-dish-price">Day 6–7</span></div>
+          </div>
+        </div>`
+      },
+      automations: {
+        label: 'You Own It',
+        headline: 'Send an email.<br>See it happen.',
+        body: 'No developer on speed dial. You email a change, your site updates. New party? New flyer? New lineup? Done before your coffee gets cold.',
+        detail: `<div class="demo-features">
+          <div class="demo-feature"><strong>Add a new event</strong><p>"New night: OVERDRIVE, March 15, €25." You send the email, the event page goes live.</p></div>
+          <div class="demo-feature"><strong>Update the lineup</strong><p>DJ confirmed last minute? Send the name and the flyer. Your site updates, socials get posted.</p></div>
+          <div class="demo-feature"><strong>Guestlist on autopilot</strong><p>Guests sign up through your site. You get the list. They get a confirmation. No spreadsheets.</p></div>
+          <div class="demo-feature"><strong>Post-event gallery</strong><p>Email the photos after the night. They go straight to your site. Keep the hype alive between weekends.</p></div>
+        </div>`
+      },
+      stack: {
+        label: 'What\'s Included',
+        headline: 'Everything. Handled.',
+        body: '',
+        detail: `<div class="demo-img" style="background-image:url('https://images.unsplash.com/photo-1571266028243-3716f02d8b8d?w=800&h=450&fit=crop&auto=format&q=80')"></div>
+        <div class="demo-features">
+          <div class="demo-feature"><strong>Event pages</strong><p>Each event gets its own page with lineup, info, and direct ticket link.</p></div>
+          <div class="demo-feature"><strong>Ticket integration</strong><p>Sell directly from your site. No redirects, no third-party confusion.</p></div>
+          <div class="demo-feature"><strong>Photo gallery</strong><p>Auto-updated after every event. Keep the hype alive between weekends.</p></div>
+          <div class="demo-feature"><strong>Guestlist system</strong><p>VIPs, press, promoters — everyone managed in one place.</p></div>
+        </div>`
+      },
+      approach: {
+        label: 'VIP & Guestlist',
+        headline: 'Skip the queue.',
+        body: '',
+        detail: `<div class="demo-form">
+          <div class="demo-form-row"><div class="demo-form-field">Event</div><div class="demo-form-field">Date</div></div>
+          <div class="demo-form-row"><div class="demo-form-field">Name</div><div class="demo-form-field">Guests</div></div>
+          <div class="demo-form-row"><div class="demo-form-field full">VIP table request or guestlist code</div></div>
+          <a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#c44dff;color:#fff;box-shadow:0 0 20px rgba(196,77,255,0.4);margin-top:8px">Submit →</a>
+        </div>
+        <div class="demo-info-grid">
+          <div class="demo-info-block"><h4>Door Policy</h4><p>18+ with valid ID<br>Smart casual<br>Management reserves the right</p></div>
+          <div class="demo-info-block"><h4>Location</h4><p>Your address here<br>Your city<br>Google Maps + taxi link</p></div>
+        </div>`
+      },
+      cta: {
+        label: 'Built by Tobias Bouw',
+        headline: 'This could be<br>your venue.',
+        body: 'The events, the tickets, the promoter tools, the post-event flow — I build this in days. One person. The whole thing.',
+        ctaText: 'Let\'s build yours →'
+      }
+    },
+    tags: {}
+  },
+  ecommerce: {
+    style: {
+      name: 'MAISON NOIR',
+      bg: '#f8f7f5', fg: '#1a1a1a', accent: '#1a1a1a',
+      cardBg: '#fff', cardBorder: 'none', cardShadow: '0 2px 20px rgba(0,0,0,0.05)',
+      labelFont: 'Familjen Grotesk', headlineFont: 'Familjen Grotesk', headlineWeight: 600, headlineSize: 'clamp(1.8rem,5vw,3rem)',
+      bodyFont: 'Familjen Grotesk', bodyColor: '#666',
+      indicatorBg: '#1a1a1a', indicatorFg: '#fff',
+      overlay: 'none'
+    },
+    topbarName: 'MAISON NOIR',
+    heroImage: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&h=800&fit=crop&auto=format&q=80',
+    heroOverlay: 'linear-gradient(180deg, rgba(248,247,245,0.3) 0%, rgba(248,247,245,0.7) 40%, rgba(248,247,245,0.95) 100%)',
+    content: {
+      intro: {
+        label: 'maison noir',
+        headline: 'New season.<br>New standard.',
+        body: 'Curated essentials for those who value quality over quantity. Ethically made, designed to last.',
+        detail: '<div class="demo-hero-sub">FREE SHIPPING OVER €100 · NEW COLLECTION AVAILABLE</div><a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#1a1a1a;color:#fff;">Shop the collection →</a>'
+      },
+      websites: {
+        label: 'The Process',
+        headline: '',
+        body: '',
+        detail: `<div class="demo-menu">
+          <div class="demo-menu-cat"><h3>First Fitting</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Define the brand</span><div class="demo-dish-desc">Your aesthetic, your customer, your positioning. We nail down every detail before anything gets built.</div></div><span class="demo-dish-price">Day 1</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Map the machine</span><div class="demo-dish-desc">Abandoned carts, stock alerts, upsells, post-purchase flows — we plan every automation your store needs.</div></div><span class="demo-dish-price">Day 1</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Production</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Design & develop</span><div class="demo-dish-desc">Product pages, instant checkout, inventory sync, mobile-perfect — your entire storefront, built fast.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Connect the systems</span><div class="demo-dish-desc">Cart recovery emails, smart upsells, restock alerts, review requests — all wired up and running.</div></div><span class="demo-dish-price">Day 2–5</span></div>
+          </div>
+          <div class="demo-menu-cat"><h3>Launch Day</h3>
+            <div class="demo-menu-item"><div class="demo-dish-info"><span class="demo-dish-name">Open the doors</span><div class="demo-dish-desc">Your store goes live. Products listed. Payments flowing. I stay until everything runs on its own.</div></div><span class="demo-dish-price">Day 6–7</span></div>
+          </div>
+        </div>`
+      },
+      automations: {
+        label: 'You Own It',
+        headline: 'Send an email.<br>See it happen.',
+        body: 'No waiting on a developer. You email a change, your store updates. New product? Discount code? Sold out? Handled in minutes.',
+        detail: `<div class="demo-features">
+          <div class="demo-feature"><strong>Add a product</strong><p>"New item: Linen Blazer, €189, sizes S–XL." You send the email, it appears in your store.</p></div>
+          <div class="demo-feature"><strong>Run a promotion</strong><p>"10% off everything until Sunday, code SPRING10." One email. Discount live. No dashboard needed.</p></div>
+          <div class="demo-feature"><strong>Mark sold out</strong><p>"Wool coat is gone." You email it, the product updates instantly. Back in stock? Same thing.</p></div>
+          <div class="demo-feature"><strong>Auto follow-ups</strong><p>Customer fills in the contact form? They get a thank-you email. You get notified. No one falls through the cracks.</p></div>
+        </div>`
+      },
+      stack: {
+        label: 'What\'s Included',
+        headline: 'Everything. Handled.',
+        body: '',
+        detail: `<div class="demo-img" style="background-image:url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=450&fit=crop&auto=format&q=80')"></div>
+        <div class="demo-features">
+          <div class="demo-feature"><strong>Product pages</strong><p>Beautiful layouts with zoom, size guides, and related items.</p></div>
+          <div class="demo-feature"><strong>Instant checkout</strong><p>Apple Pay, iDEAL, credit card — no friction, no abandoned carts.</p></div>
+          <div class="demo-feature"><strong>Inventory sync</strong><p>Stock updates in real-time. Sold out? It says so. Back in stock? Customers get notified.</p></div>
+          <div class="demo-feature"><strong>SEO-ready</strong><p>Product schema, meta tags, sitemap — your products show up where people search.</p></div>
+        </div>`
+      },
+      approach: {
+        label: 'Cart & Shipping',
+        headline: 'Checkout in 30 seconds.',
+        body: '',
+        detail: `<div class="demo-form">
+          <div class="demo-form-row"><div class="demo-form-field full" style="display:flex;justify-content:space-between;align-items:center"><span>Oversized Wool Coat × 1</span><span>€289</span></div></div>
+          <div class="demo-form-row"><div class="demo-form-field full" style="display:flex;justify-content:space-between;align-items:center"><span>Organic Cotton Tee × 2</span><span>€98</span></div></div>
+          <div class="demo-form-row"><div class="demo-form-field full" style="display:flex;justify-content:space-between;align-items:center;opacity:0.8"><strong>Total</strong><strong>€387</strong></div></div>
+          <a href="#" class="demo-cta-btn" onclick="event.preventDefault()" style="background:#1a1a1a;color:#fff;margin-top:8px;width:100%;text-align:center">Checkout →</a>
+        </div>
+        <div class="demo-info-grid">
+          <div class="demo-info-block"><h4>Shipping</h4><p>Free over €100<br>EU: 2–4 days<br>Worldwide: 5–10 days</p></div>
+          <div class="demo-info-block"><h4>Returns</h4><p>30-day returns<br>Free exchanges<br>No questions asked</p></div>
+        </div>`
+      },
+      cta: {
+        label: 'Built by Tobias Bouw',
+        headline: 'This could be<br>your store.',
+        body: 'The collection, the checkout, the abandoned cart recovery, the smart upsells — I build this in days. One person. End to end.',
+        ctaText: 'Let\'s build yours →'
+      }
+    },
+    tags: {}
+  }
+};
+
+// Store original content for restoring later
+const originalContent = {};
+const sectionIds = ['intro', 'websites', 'automations', 'stack', 'approach', 'cta'];
+let demoActive = false;
+const demoBackBtn = document.getElementById('demo-back');
+
+function saveOriginalContent() {
+  sectionIds.forEach(id => {
+    const sec = document.getElementById(id);
+    originalContent[id] = {
+      label: sec.querySelector('.section-label').textContent,
+      headline: sec.querySelector('.section-headline').innerHTML,
+      body: sec.querySelector('.section-body').innerHTML,
+      detail: sec.querySelector('.section-detail').innerHTML
+    };
+  });
+  originalContent.topbarName = document.querySelector('#topbar .name').textContent;
+}
+saveOriginalContent();
+
+function enterDemo(industryKey) {
+  const ind = industries[industryKey];
+  if (!ind) return;
+
+  const wasDemoActive = demoActive;
+  demoActive = true;
+
+  // Clean up previous demo hero
+  const oldHero = document.querySelector('.demo-hero-img');
+  if (oldHero) oldHero.remove();
+
+  // If switching between demos, fade out first then swap
+  if (wasDemoActive) {
+    document.body.classList.add('demo-switching');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      _applyDemo(ind, industryKey);
+      document.body.classList.remove('demo-switching');
+    }, 280);
+    return;
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Small delay so scroll starts before content swaps
+  setTimeout(() => _applyDemo(ind, industryKey), 300);
+}
+
+function _applyDemo(ind, industryKey) {
+    // Swap topbar name
+    document.querySelector('#topbar .name').textContent = ind.topbarName;
+
+    // Swap all section content
+    sectionIds.forEach(id => {
+      const sec = document.getElementById(id);
+      const c = ind.content[id];
+      sec.querySelector('.section-label').textContent = c.label;
+      sec.querySelector('.section-headline').innerHTML = c.headline;
+      sec.querySelector('.section-body').innerHTML = c.body;
+      if (c.detail) {
+        sec.querySelector('.section-detail').innerHTML = c.detail;
+      }
+      if (c.ctaText) {
+        const btn = sec.querySelector('#cta-button') || sec.querySelector('.cta-button');
+        if (btn) btn.textContent = c.ctaText;
+      }
+    });
+
+    // Fill demo tag rows
+    if (ind.tags) {
+      const tagRows = document.querySelectorAll('.demo-tags');
+      const tagKeys = Object.keys(ind.tags);
+      tagRows.forEach((row, i) => {
+        const key = tagKeys[i] || tagKeys[0];
+        row.innerHTML = ind.tags[key].map(t => `<span class="tag-item">${t}</span>`).join('');
+      });
+    }
+
+    // Apply style
+    applyStyle(ind.style);
+    showToast(ind.topbarName, ind.style);
+
+    // Apply dynamic styles to new elements
+    applyDemoElements(ind.style);
+
+    // Clean up any leftover hero and apply new one
+    const introSec = document.getElementById('intro');
+    const oldHero = introSec.querySelector('.demo-hero-img');
+    if (oldHero) oldHero.remove();
+
+    if (ind.heroImage) {
+      introSec.classList.add('has-hero');
+      const heroBg = document.createElement('div');
+      heroBg.className = 'demo-hero-img';
+      heroBg.style.backgroundImage = `url('${ind.heroImage}')`;
+      const ov = document.createElement('div');
+      ov.style.cssText = `position:absolute;inset:0;background:${ind.heroOverlay};border-radius:inherit`;
+      heroBg.appendChild(ov);
+      introSec.prepend(heroBg);
+    }
+
+    // Trigger animations
+    document.body.classList.add('demo-active');
+
+    // Show back button + demo nav
+    demoBackBtn.style.background = `${ind.style.fg}22`;
+    demoBackBtn.style.color = ind.style.fg;
+    demoBackBtn.style.borderColor = `${ind.style.fg}44`;
+    demoBackBtn.classList.add('visible');
+
+    const demoNav = document.getElementById('demo-nav');
+    demoNav.classList.add('visible');
+    demoNav.querySelectorAll('button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.demo === industryKey);
+    });
+
+    resetScrollAnimations();
+}
+
+function applyDemoElements(s) {
+  // Style newly created tags
+  document.querySelectorAll('.demo-tags .tag-item').forEach(tag => {
+    tag.style.background = s.cardBorder && s.cardBorder !== 'none' ? s.fg : 'rgba(128,128,128,0.15)';
+    tag.style.color = s.cardBorder && s.cardBorder !== 'none' ? s.bg : s.fg;
+    tag.style.fontFamily = `'${s.labelFont}', monospace`;
+  });
+  // Style newly created terminal boxes
+  document.querySelectorAll('.terminal-box').forEach(box => {
+    box.style.fontFamily = `'${s.labelFont}', monospace`;
+    box.style.fontSize = '0.8rem';
+    box.style.lineHeight = '1.8';
+    box.style.padding = '16px';
+    box.style.background = 'rgba(128,128,128,0.1)';
+    box.style.border = `1px solid ${s.accent}33`;
+    box.style.borderRadius = '4px';
+    box.style.color = s.accent;
+  });
+  document.querySelectorAll('.cursor').forEach(c => {
+    c.style.cssText = `display:inline-block;width:8px;height:14px;background:${s.accent};animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-top:8px`;
+  });
+  // Style demo-specific elements
+  document.querySelectorAll('.demo-cta-btn').forEach(btn => {
+    btn.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+    btn.style.fontWeight = '700';
+  });
+  document.querySelectorAll('.demo-menu-item').forEach(item => {
+    item.style.borderBottomColor = `${s.accent}15`;
+  });
+  document.querySelectorAll('.demo-dish-name').forEach(el => {
+    el.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+  });
+  document.querySelectorAll('.demo-dish-desc, .demo-dish-price').forEach(el => {
+    el.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+  });
+  document.querySelectorAll('.demo-quote').forEach(el => {
+    el.style.fontFamily = `'${s.headlineFont}', sans-serif`;
+    el.style.borderLeftColor = s.accent;
+  });
+  document.querySelectorAll('.demo-form-field').forEach(el => {
+    el.style.borderColor = `${s.accent}33`;
+    el.style.color = s.fg;
+  });
+  document.querySelectorAll('.demo-info-block h4').forEach(el => {
+    el.style.fontFamily = `'${s.labelFont}', sans-serif`;
+  });
+  document.querySelectorAll('.demo-hero-sub').forEach(el => {
+    el.style.color = s.accent;
+  });
+  // Style automation feature cards
+  document.querySelectorAll('.demo-feature').forEach(el => {
+    el.style.borderColor = `${s.accent}22`;
+    el.style.background = `${s.accent}08`;
+  });
+  document.querySelectorAll('.demo-feature strong').forEach(el => {
+    el.style.color = s.accent;
+    el.style.fontFamily = `'${s.labelFont}', sans-serif`;
+  });
+  // Style newly created process grids
+  document.querySelectorAll('.process-grid').forEach(grid => {
+    grid.style.cssText = `display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-top:8px`;
+  });
+  document.querySelectorAll('.process-item').forEach(item => {
+    item.style.padding = '16px';
+    item.style.borderTop = `3px solid ${s.accent}`;
+    item.style.fontFamily = `'${s.bodyFont}', sans-serif`;
+    const strong = item.querySelector('strong');
+    const span = item.querySelector('span');
+    if (strong) { strong.style.display = 'block'; strong.style.marginBottom = '4px'; }
+    if (span) { span.style.fontSize = '0.85rem'; span.style.opacity = '0.7'; }
+  });
+}
+
+function exitDemo() {
+  demoActive = false;
+  document.body.classList.remove('demo-active');
+  demoBackBtn.classList.remove('visible');
+  document.getElementById('demo-nav').classList.remove('visible');
+
+  // Clean up hero image
+  const introSec = document.getElementById('intro');
+  introSec.classList.remove('has-hero');
+  const heroBg = introSec.querySelector('.demo-hero-img');
+  if (heroBg) heroBg.remove();
+
+  // Restore topbar
+  document.querySelector('#topbar .name').textContent = originalContent.topbarName;
+
+  // Restore all section content
+  sectionIds.forEach(id => {
+    const sec = document.getElementById(id);
+    const o = originalContent[id];
+    sec.querySelector('.section-label').textContent = o.label;
+    sec.querySelector('.section-headline').innerHTML = o.headline;
+    sec.querySelector('.section-body').innerHTML = o.body;
+    sec.querySelector('.section-detail').innerHTML = o.detail;
+  });
+
+  // Re-build dynamic elements
+  document.getElementById('stack-tags').innerHTML = ['React', 'Next.js', 'Python', 'AI APIs', 'Tailwind'].map(t => `<span class="tag-item">${t}</span>`).join('');
+
+  // Restore style
+  applyStyle(styles[current]);
+  showToast(styles[current].name, styles[current]);
+  resetScrollAnimations();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Make mockup cards clickable (delegate on section so it survives innerHTML restore)
+document.getElementById('websites').addEventListener('click', (e) => {
+  const card = e.target.closest('.mockup-card');
+  if (!card) return;
+  const preview = card.querySelector('.mockup-preview');
+  const key = ['restaurant','nightclub','ecommerce']
+    .find(k => preview.classList.contains(k));
+  if (key) enterDemo(key);
+});
+
+// --- AI Designer ---
+const aiPromptInput = document.getElementById('ai-prompt');
+const aiStatus = document.getElementById('ai-status');
+const aiGenerateBtn = document.getElementById('ai-generate');
+let aiCustomStyle = null;
+
+// Restore custom style on load
+const savedStyle = localStorage.getItem('tbouw_ai_custom_style');
+if (savedStyle) {
+  try {
+    aiCustomStyle = JSON.parse(savedStyle);
+    applyStyle(aiCustomStyle);
+    showToast('AI: ' + (aiCustomStyle.name || 'Custom'), aiCustomStyle);
+  } catch (e) {
+    localStorage.removeItem('tbouw_ai_custom_style');
+  }
+}
+
+async function generateDesign() {
+  const prompt = aiPromptInput.value.trim();
+  if (!prompt) { aiStatus.textContent = 'Please describe a style.'; return; }
+
+  aiStatus.textContent = 'Generating...';
+  aiGenerateBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'API error ' + res.status);
+    }
+
+    const style = await res.json();
+
+    // Validate required fields
+    if (!style.bg || !style.fg || !style.headlineFont || !style.bodyFont) {
+      throw new Error('Incomplete style returned');
+    }
+
+    aiCustomStyle = style;
+    localStorage.setItem('tbouw_ai_custom_style', JSON.stringify(style));
+    applyStyle(style);
+    showToast('AI: ' + (style.name || 'Custom'), style);
+    aiStatus.textContent = 'Applied: ' + (style.name || 'Custom');
+  } catch (e) {
+    aiStatus.textContent = 'Error: ' + e.message;
+  } finally {
+    aiGenerateBtn.disabled = false;
+  }
+}
+
+function resetDesign() {
+  aiCustomStyle = null;
+  localStorage.removeItem('tbouw_ai_custom_style');
+  applyStyle(styles[current]);
+  showToast(styles[current].name, styles[current]);
+  aiStatus.textContent = 'Reset to ' + styles[current].name;
+}
+
+// Override swipe/keyboard navigation to clear AI custom style and exit demo
+const _origInstantChange = instantChange;
+instantChange = function(newIndex) {
+  if (demoActive) exitDemo();
+  if (aiCustomStyle) {
+    aiCustomStyle = null;
+    localStorage.removeItem('tbouw_ai_custom_style');
+    aiStatus.textContent = '';
+  }
+  _origInstantChange(newIndex);
+};
+
+// ── Full-screen AI Chat + Iframe Demo ──
+const fsChat = document.getElementById('fs-chat');
+const fsChatScroll = document.getElementById('fs-chat-scroll');
+const fsChatInput = document.getElementById('fs-chat-input');
+const fsChatInputBar = document.getElementById('fs-chat-input-bar');
+const fsChatQR = document.getElementById('fs-chat-qr');
+const fsChatProgress = document.getElementById('fs-chat-progress');
+const fcProgressFill = document.getElementById('fc-progress-fill');
+const fcProgressText = document.getElementById('fc-progress-text');
+const iframeWrap = document.getElementById('demo-iframe-wrap');
+const iframeFrame = document.getElementById('demo-iframe-frame');
+const iframeLabel = document.getElementById('demo-iframe-label');
+const leadCaptureCta = document.getElementById('lead-capture-cta');
+
+let chatState = 'IDLE';
+const chatLead = { name: '', email: '', business: '', type: '', vibe: '' };
+const chatHistory = []; // {role:'user'|'bot', text:'...'}
+let useAI = false; // set true when /api/chat is reachable
+
+// Vibe → style theme mapping (fallback mode)
+const vibeStyleMap = {
+  'Warm & Elegant': 'Haute Couture',
+  'Dark & Bold': 'Midnight Studio',
+  'Clean & Minimal': 'Zen',
+  'Loud & Electric': 'Synthwave',
+  'Playful & Fun': 'Candy Pop',
+  'Raw & Edgy': 'Neobrutalism'
+};
+const typeTemplateMap = {
+  'Restaurant': 'restaurant',
+  'Nightclub / Bar': 'nightclub',
+  'Online Store': 'ecommerce',
+  'Other': 'ecommerce'
+};
+
+// ── Chat UI helpers ──
+function addMsg(role, text) {
+  const d = document.createElement('div');
+  d.className = 'fc-msg ' + role;
+  d.textContent = text;
+  fsChatScroll.appendChild(d);
+  fsChatScroll.scrollTop = fsChatScroll.scrollHeight;
+  chatHistory.push({ role, text });
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.className = 'fc-typing';
+  d.id = 'fc-typing';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  fsChatScroll.appendChild(d);
+  fsChatScroll.scrollTop = fsChatScroll.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('fc-typing');
+  if (t) t.remove();
+}
+
+function botSay(text, delay) {
+  delay = delay || 700;
+  showTyping();
+  return new Promise(resolve => {
+    setTimeout(() => { hideTyping(); addMsg('bot', text); resolve(); }, delay);
+  });
+}
+
+function showQR(options, callback) {
+  fsChatInputBar.classList.add('hidden');
+  fsChatQR.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'fc-pill';
+    btn.textContent = opt;
+    btn.onclick = () => {
+      addMsg('user', opt);
+      fsChatQR.innerHTML = '';
+      fsChatInputBar.classList.remove('hidden');
+      callback(opt);
+    };
+    fsChatQR.appendChild(btn);
+  });
+}
+
+// ── Open / Close ──
+function chatOpen() {
+  fsChat.classList.add('open');
+  if (chatState === 'IDLE') {
+    chatState = 'ACTIVE';
+    fsChatScroll.innerHTML = '';
+    fsChatQR.innerHTML = '';
+    fsChatInputBar.classList.remove('hidden');
+    fsChatProgress.classList.remove('active');
+    fsChatInput.placeholder = 'Your name...';
+
+    // Try AI endpoint
+    fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [] })
+    }).then(r => {
+      if (r.ok) return r.json();
+      throw new Error('no api');
+    }).then(data => {
+      useAI = true;
+      if (data.reply) {
+        botSay(data.reply);
+      } else {
+        botSay('Hey! Tell me about your business and I\'ll design a website for you right now.');
+      }
+      fsChatInput.placeholder = 'Type here...';
+    }).catch(() => {
+      useAI = false;
+      chatState = 'ASKING_NAME';
+      botSay('Hey! I\'m Tobias. Let\'s see what your site could look like. What\'s your name?');
+    });
+  }
+  setTimeout(() => fsChatInput.focus(), 400);
+}
+
+function chatClose() {
+  fsChat.classList.remove('open');
+}
+
+function chatSend() {
+  const val = fsChatInput.value.trim();
+  if (!val) return;
+  fsChatInput.value = '';
+  addMsg('user', val);
+
+  if (useAI) {
+    sendToAI(val);
+  } else {
+    processInputFallback(val);
+  }
+}
+
+fsChatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); chatSend(); }
+});
+
+// ── AI Mode ──
+async function sendToAI(text) {
+  showTyping();
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory })
+    });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    hideTyping();
+
+    if (data.reply) addMsg('bot', data.reply);
+    if (data.lead) Object.assign(chatLead, data.lead);
+
+    // If API returned a full page, show it
+    if (data.page) {
+      chatState = 'DEMO';
+      localStorage.setItem('tbouw_preview_page', data.page);
+      showIframeDemo(data.page, chatLead.business || 'Your site');
+    }
+  } catch (e) {
+    hideTyping();
+    // Fall back to deterministic mode
+    useAI = false;
+    chatState = 'ASKING_NAME';
+    addMsg('bot', 'Let me switch to quick mode. What\'s your name?');
+  }
+}
+
+// ── Fallback (deterministic) Mode ──
+function processInputFallback(val) {
+  switch (chatState) {
+    case 'ASKING_NAME':
+      chatLead.name = val;
+      chatState = 'ASKING_EMAIL';
+      fsChatInput.placeholder = 'you@example.com';
+      botSay('Nice to meet you, ' + chatLead.name + '! What\'s your email?')
+        .then(() => fsChatInput.focus());
+      break;
+
+    case 'ASKING_EMAIL':
+      chatLead.email = val;
+      chatState = 'ASKING_BUSINESS';
+      fsChatInput.placeholder = 'e.g. The Golden Fork';
+      botSay('Got it. What\'s your business called?')
+        .then(() => fsChatInput.focus());
+      break;
+
+    case 'ASKING_BUSINESS':
+      chatLead.business = val;
+      chatState = 'ASKING_TYPE';
+      botSay('What kind of business is ' + chatLead.business + '?', 500)
+        .then(() => {
+          showQR(['Restaurant', 'Nightclub / Bar', 'Online Store', 'Other'], choice => {
+            chatLead.type = choice;
+            chatState = 'ASKING_VIBE';
+            botSay('What vibe fits ' + chatLead.business + '?', 500)
+              .then(() => {
+                showQR(['Warm & Elegant', 'Dark & Bold', 'Clean & Minimal', 'Loud & Electric', 'Playful & Fun', 'Raw & Edgy'], vibeChoice => {
+                  chatLead.vibe = vibeChoice;
+                  chatState = 'BUILDING';
+                  runFallbackBuild();
+                });
+              });
+          });
+        });
+      break;
+  }
+}
+
+function runFallbackBuild() {
+  fsChatInputBar.classList.add('hidden');
+  botSay('Building ' + chatLead.business + '\'s website...', 500).then(() => {
+    fsChatProgress.classList.add('active');
+    fcProgressFill.style.width = '0%';
+    fcProgressText.textContent = 'Generating design...';
+
+    const steps = [
+      { pct: 25, text: 'Choosing layout...' },
+      { pct: 50, text: 'Applying ' + chatLead.vibe.toLowerCase() + ' style...' },
+      { pct: 75, text: 'Personalizing for ' + chatLead.business + '...' },
+      { pct: 100, text: 'Done!' }
+    ];
+
+    steps.forEach((step, i) => {
+      setTimeout(() => {
+        fcProgressFill.style.width = step.pct + '%';
+        fcProgressText.textContent = step.text;
+        if (step.pct === 100) {
+          setTimeout(() => {
+            fsChatProgress.classList.remove('active');
+            chatState = 'DEMO';
+            const page = buildFallbackPage();
+            localStorage.setItem('tbouw_preview_page', page);
+            chatClose();
+            showIframeDemo(page, chatLead.business);
+          }, 400);
+        }
+      }, (i + 1) * 600);
+    });
+  });
+}
+
+// ── Build fallback HTML page from template ──
+function buildFallbackPage() {
+  const templateKey = typeTemplateMap[chatLead.type] || 'ecommerce';
+  const template = industries[templateKey];
+  const vibeThemeName = vibeStyleMap[chatLead.vibe] || 'Midnight Studio';
+  const vibeStyle = styles.find(s => s.name === vibeThemeName) || styles[0];
+
+  const biz = chatLead.business;
+  const accent = vibeStyle.accent;
+  const bg = vibeStyle.bg.startsWith('#') ? vibeStyle.bg : '#0d0221';
+  const fg = vibeStyle.fg;
+  const bodyColor = vibeStyle.bodyColor;
+  const hFont = vibeStyle.headlineFont;
+  const bFont = vibeStyle.bodyFont;
+
+  // Build menu/process items from template
+  let processHTML = '';
+  if (template.content.websites.detail) {
+    processHTML = template.content.websites.detail
+      .replace(new RegExp(escapeRegExp(template.topbarName), 'gi'), biz);
+  }
+
+  let featuresHTML = '';
+  if (template.content.automations.detail) {
+    featuresHTML = template.content.automations.detail
+      .replace(new RegExp(escapeRegExp(template.topbarName), 'gi'), biz);
+  }
+
+  const heroImg = template.heroImage || '';
+  const heroOvFrom = hexToRgba(bg, 0.3);
+  const heroOvTo = hexToRgba(bg, 0.92);
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(biz)}</title>
+<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(hFont)}:wght@400;700;900&family=${encodeURIComponent(bFont)}:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:${bg};color:${fg};font-family:'${bFont}',sans-serif;min-height:100vh}
+.hero{position:relative;min-height:90vh;display:flex;flex-direction:column;justify-content:flex-end;padding:48px 24px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:url('${heroImg}') center/cover no-repeat}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(180deg,${heroOvFrom} 0%,${heroOvTo} 100%)}
+.hero *{position:relative;z-index:1}
+.hero h1{font-family:'${hFont}',sans-serif;font-size:clamp(2rem,6vw,3.5rem);font-weight:700;line-height:1.1;margin-bottom:12px}
+.hero p{font-size:0.9rem;opacity:0.7;max-width:500px;line-height:1.6}
+.hero-cta{display:inline-block;margin-top:20px;padding:14px 32px;background:${accent};color:${isLightColor(accent)?'#111':'#fff'};font-family:'${hFont}',sans-serif;font-weight:700;font-size:0.9rem;border-radius:999px;text-decoration:none}
+section{max-width:700px;margin:0 auto;padding:80px 24px}
+h2{font-family:'${hFont}',sans-serif;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:700;margin-bottom:16px}
+p.body{color:${bodyColor};line-height:1.7;font-size:0.95rem}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.feat{padding:16px;border-radius:8px;border:1px solid ${accent}22;background:${accent}08}
+.feat strong{display:block;margin-bottom:4px;font-size:0.85rem;color:${accent};font-family:'${hFont}',sans-serif}
+.feat p{font-size:0.78rem;opacity:0.6;line-height:1.5;margin:0}
+.cta-section{text-align:center;padding:100px 24px}
+.cta-section h2{font-size:clamp(1.8rem,5vw,3rem)}
+.cta-section p{color:${bodyColor};margin:0 auto 24px;max-width:500px;line-height:1.7}
+.cta-btn{display:inline-block;padding:16px 40px;background:${accent};color:${isLightColor(accent)?'#111':'#fff'};font-family:'${hFont}',sans-serif;font-weight:700;font-size:1rem;border-radius:999px;text-decoration:none}
+@media(max-width:480px){.features{grid-template-columns:1fr}}
+</style></head><body>
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-ov"></div>
+  <h1>${esc(biz)}</h1>
+  <p>${esc(template.content.intro.body.replace(new RegExp(escapeRegExp(template.topbarName),'gi'), biz))}</p>
+  <a href="#" class="hero-cta" onclick="return false">Get started →</a>
+</div>
+<section>
+  <h2>What we do</h2>
+  <p class="body">${esc(template.content.automations.body.replace(new RegExp(escapeRegExp(template.topbarName),'gi'), biz))}</p>
+  ${featuresHTML}
+</section>
+<div class="cta-section">
+  <h2>This could be ${esc(biz)}.</h2>
+  <p>Built for ${esc(chatLead.name)}. The full site, the automations, the smart systems — built in days. One person. The whole thing.</p>
+  <a href="#" class="cta-btn" onclick="return false">Let's make it real →</a>
+</div>
+</body></html>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function hexToRgba(hex, alpha) {
+  if (!hex || hex.startsWith('linear') || hex.startsWith('radial')) return 'rgba(0,0,0,' + alpha + ')';
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  const r = parseInt(hex.substring(0, 2), 16) || 0;
+  const g = parseInt(hex.substring(2, 4), 16) || 0;
+  const b = parseInt(hex.substring(4, 6), 16) || 0;
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+function isLightColor(color) {
+  if (!color || !color.startsWith('#')) return false;
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) || 0;
+  const g = parseInt(hex.substring(2, 4), 16) || 0;
+  const b = parseInt(hex.substring(4, 6), 16) || 0;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+}
+
+// ── Iframe Demo ──
+function showIframeDemo(html, label) {
+  const blob = new Blob([html], { type: 'text/html' });
+  iframeFrame.src = URL.createObjectURL(blob);
+  iframeLabel.textContent = label + ' — Preview';
+  iframeWrap.classList.add('open');
+
+  setTimeout(() => {
+    leadCaptureCta.classList.add('visible');
+  }, 1500);
+}
+
+function closeIframeDemo() {
+  iframeWrap.classList.remove('open');
+  leadCaptureCta.classList.remove('visible');
+  URL.revokeObjectURL(iframeFrame.src);
+  iframeFrame.src = 'about:blank';
+  chatState = 'IDLE';
+}
+
+function saveLead() {
+  const leads = JSON.parse(localStorage.getItem('tbouw_leads') || '[]');
+  leads.push({
+    ...chatLead,
+    timestamp: new Date().toISOString(),
+    style: chatLead.vibe
+  });
+  localStorage.setItem('tbouw_leads', JSON.stringify(leads));
+
+  leadCaptureCta.textContent = 'Saved! I\'ll be in touch.';
+  leadCaptureCta.style.pointerEvents = 'none';
+  setTimeout(() => {
+    leadCaptureCta.classList.remove('visible');
+    leadCaptureCta.style.pointerEvents = '';
+  }, 2500);
+}
+
+function applyChatStyles() {
+  // no-op now — chat has its own fixed dark theme
+}
+
+
+</script>
+</body>
+</html>
