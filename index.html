@@ -1910,24 +1910,22 @@ function applyStyle(s) {
     ctaBtn.style.fontFamily = `'${s.headlineFont}', sans-serif`;
   }
 
-  // Overlay
+  // Overlay - reset transform and background first
   overlay.style.transform = 'none';
   overlay.style.top = '0';
+  overlay.style.background = 'none';
+
   if (s.overlay === 'scanlines') {
-    overlay.style.opacity = '1';
     overlay.style.background = 'repeating-linear-gradient(transparent,transparent 2px,rgba(0,255,65,0.03) 2px,rgba(0,255,65,0.03) 4px)';
   } else if (s.overlay === 'grid') {
-    overlay.style.opacity = '1';
     overlay.style.background = 'repeating-linear-gradient(90deg,#ff297518 0px,transparent 1px,transparent 80px),repeating-linear-gradient(0deg,#ff297518 0px,transparent 1px,transparent 80px)';
     overlay.style.transform = 'perspective(400px) rotateX(35deg)';
     overlay.style.transformOrigin = 'bottom';
     overlay.style.top = '45%';
   } else if (s.overlay === 'memphis') {
-    overlay.style.opacity = '1';
     overlay.style.background = 'radial-gradient(circle 10px at 12% 20%,#feca5744 50%,transparent 50%),radial-gradient(circle 14px at 85% 12%,#48dbfb44 50%,transparent 50%),radial-gradient(circle 8px at 55% 75%,#ff9ff344 50%,transparent 50%),radial-gradient(circle 12px at 20% 85%,#1dd1a144 50%,transparent 50%)';
-  } else {
-    overlay.style.opacity = '0';
   }
+  // Note: opacity will be set after animations are added
 
   // CTA Options
   document.querySelectorAll('.cta-option').forEach(option => {
@@ -2006,6 +2004,11 @@ function applyStyle(s) {
       overlay.classList.add('memphis');
       break;
   }
+
+  // Set overlay opacity after animations are added
+  const hasOverlayPattern = s.overlay === 'scanlines' || s.overlay === 'grid' || s.overlay === 'memphis';
+  const hasAnimationElements = overlay.classList.contains('cosmos-stars') || overlay.classList.contains('fiesta-active');
+  overlay.style.opacity = (hasOverlayPattern || hasAnimationElements) ? '1' : '0';
 
   // Update chat accent color
   if (typeof applyChatStyles === 'function') applyChatStyles();
