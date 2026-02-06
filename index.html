@@ -146,6 +146,44 @@
     .intro-mobile { display: none; }
     .intro-desktop { display: inline; }
   }
+  @media (max-width: 768px) {
+    #cursor-tutorial { display: none !important; }
+  }
+
+  /* Desktop cursor tutorial */
+  #cursor-tutorial {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  #cursor-tutorial.active { opacity: 1; }
+  #cursor-tutorial .ghost-cursor {
+    position: fixed;
+    width: 28px; height: 28px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+    z-index: 210;
+    transition: top 1.2s cubic-bezier(0.4, 0, 0.2, 1), left 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #cursor-tutorial .click-ring {
+    position: fixed;
+    width: 0; height: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    z-index: 205;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+  #cursor-tutorial .click-ring.pop {
+    animation: clickPop 0.5s ease-out forwards;
+  }
+  @keyframes clickPop {
+    0% { width: 0; height: 0; opacity: 0.8; }
+    100% { width: 40px; height: 40px; opacity: 0; }
+  }
 
   /* Lazy loading animations */
   .animate-on-scroll {
@@ -1084,6 +1122,13 @@
   <div class="hint-text">Swipe to change style</div>
 </div>
 
+<div id="cursor-tutorial">
+  <svg class="ghost-cursor" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.87a.5.5 0 0 0 .35-.85L6.35 2.85a.5.5 0 0 0-.85.36Z" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  </svg>
+  <div class="click-ring"></div>
+</div>
+
 <button id="demo-back" onclick="exitDemo()">← Back to portfolio</button>
 <div class="demo-nav" id="demo-nav">
   <button onclick="enterDemo('restaurant')" data-demo="restaurant">Restaurant</button>
@@ -1527,32 +1572,63 @@ function go(d) {
   instantChange(current + d);
 }
 
-// Tutorial runs ONCE, 2 seconds after page load - no scroll triggers
+// Tutorial runs ONCE, 2 seconds after page load
+const cursorTutorial = document.getElementById('cursor-tutorial');
+
 setTimeout(() => {
   if (tutorialShown) return;
   tutorialShown = true;
   localStorage.setItem('tbouw_tutorial_done', '1');
 
-  // Show tutorial with hand
-  tutorial.classList.add('active');
+  const isDesktop = window.innerWidth > 768;
 
-  // Start dragging animation
-  setTimeout(() => {
-    tutorial.classList.add('dragging');
-
-    // Slide to next style
+  if (!isDesktop) {
+    // Mobile: hand swipe tutorial
+    tutorial.classList.add('active');
     setTimeout(() => {
-      slideToStyle(1, 1);
-    }, 400);
+      tutorial.classList.add('dragging');
+      setTimeout(() => slideToStyle(1, 1), 400);
+      setTimeout(() => tutorial.classList.remove('active', 'dragging'), 1200);
+    }, 600);
+  } else {
+    // Desktop: ghost cursor tutorial
+    if (!cursorTutorial || !styleRail) return;
+    const ghostCursor = cursorTutorial.querySelector('.ghost-cursor');
+    const clickRing = cursorTutorial.querySelector('.click-ring');
+    const targetDot = styleRail.querySelectorAll('.rail-item')[2];
+    if (!targetDot) return;
 
-    // Hide tutorial
+    const dotRect = targetDot.getBoundingClientRect();
+    const dotCenterX = dotRect.left + dotRect.width / 2;
+    const dotCenterY = dotRect.top + dotRect.height / 2;
+
+    ghostCursor.style.top = (window.innerHeight * 0.5) + 'px';
+    ghostCursor.style.left = (window.innerWidth * 0.5) + 'px';
+    ghostCursor.style.transition = 'none';
+    cursorTutorial.classList.add('active');
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ghostCursor.style.transition = '';
+        ghostCursor.style.top = (dotCenterY - 4) + 'px';
+        ghostCursor.style.left = (dotCenterX - 4) + 'px';
+      });
+    });
+
     setTimeout(() => {
-      tutorial.classList.remove('active', 'dragging');
-    }, 1200);
-  }, 600);
+      clickRing.style.top = dotCenterY + 'px';
+      clickRing.style.left = dotCenterX + 'px';
+      clickRing.classList.add('pop');
+      goTo(2);
+    }, 1400);
+
+    setTimeout(() => {
+      cursorTutorial.classList.remove('active');
+    }, 2200);
+  }
 }, 2000);
 
-// Click to skip tutorial
+// Click to skip mobile tutorial
 tutorial.addEventListener('click', () => {
   if (tutorial.classList.contains('active')) {
     tutorial.classList.remove('active', 'dragging');
