@@ -2482,12 +2482,12 @@ function chatOpen(entryPoint) {
       if (data.reply) {
         botSay(data.reply);
       } else {
-        botSay('Hey! Tell me about your business and I\'ll design a website for you right now.');
+        botSay('What\'s your business name?');
       }
     }).catch(() => {
       useAI = false;
       chatState = 'ASKING_NAME';
-      botSay('Hey! I\'m Tobias. Let\'s see what your site could look like. What\'s your name?');
+      botSay('What\'s your business name?');
     });
   }
   setTimeout(() => fsChatInput.focus(), 400);
@@ -2719,24 +2719,10 @@ async function handlePreviewReady(pageHtml) {
 function processInputFallback(val) {
   switch (chatState) {
     case 'ASKING_NAME':
-      chatLead.name = val;
-      chatState = 'ASKING_EMAIL';
-      fsChatInput.placeholder = 'you@example.com';
-      botSay('What\'s your email address?')
-        .then(() => fsChatInput.focus());
-      break;
-
-    case 'ASKING_EMAIL':
-      chatLead.email = val;
-      chatState = 'ASKING_BUSINESS';
-      fsChatInput.placeholder = 'e.g. The Golden Fork';
-      botSay('What\'s your business name?')
-        .then(() => fsChatInput.focus());
-      break;
-
-    case 'ASKING_BUSINESS':
+      // Step 1: Get business name
       chatLead.business = val;
       chatState = 'ASKING_TYPE';
+      fsChatInput.placeholder = '';
       botSay('What type of business?', 500)
         .then(() => {
           showQR(['Restaurant', 'Nightclub / Bar', 'Online Store', 'Other'], choice => {
@@ -2746,47 +2732,58 @@ function processInputFallback(val) {
               .then(() => {
                 showQR(['Warm & Elegant', 'Dark & Bold', 'Clean & Minimal', 'Loud & Electric', 'Playful & Fun', 'Raw & Edgy'], vibeChoice => {
                   chatLead.vibe = vibeChoice;
-                  chatState = 'BUILDING';
-                  runFallbackBuild();
+
+                  // Start build in background (matching AI mode)
+                  buildStarted = true;
+                  designReady = false;
+
+                  // Simulate build time (3 seconds)
+                  setTimeout(() => {
+                    designReady = true;
+                    cachedPageHtml = buildFallbackPage();
+                    checkPreviewReadiness();
+                  }, 3000);
+
+                  // Continue asking for email
+                  chatState = 'ASKING_EMAIL';
+                  botSay('What\'s your email address?', 500)
+                    .then(() => {
+                      fsChatInput.placeholder = 'you@example.com';
+                      fsChatInput.focus();
+                    });
                 });
               });
           });
         });
       break;
+
+    case 'ASKING_EMAIL':
+      // Step 2: Get email (required for preview)
+      chatLead.email = val;
+      emailCollected = true;
+      chatState = 'ASKING_NAME_ENRICHMENT';
+      fsChatInput.placeholder = '';
+
+      // Check if preview ready (might show immediately if build done)
+      checkPreviewReadiness();
+
+      // If not ready yet, ask for name as enrichment
+      if (!designReady) {
+        botSay('What\'s your name?', 500)
+          .then(() => fsChatInput.focus());
+      }
+      break;
+
+    case 'ASKING_NAME_ENRICHMENT':
+      // Step 3: Get name (enrichment while waiting for build)
+      chatLead.name = val;
+
+      // Check again - design should be ready by now
+      checkPreviewReadiness();
+
+      // If still not ready (shouldn't happen), wait silently
+      break;
   }
-}
-
-function runFallbackBuild() {
-  fsChatInputBar.classList.add('hidden');
-  botSay('Building ' + chatLead.business + '\'s website...', 500).then(() => {
-    fsChatProgress.classList.add('active');
-    fcProgressFill.style.width = '0%';
-    fcProgressText.textContent = 'Generating design...';
-
-    const steps = [
-      { pct: 25, text: 'Choosing layout...' },
-      { pct: 50, text: 'Applying ' + chatLead.vibe.toLowerCase() + ' style...' },
-      { pct: 75, text: 'Personalizing for ' + chatLead.business + '...' },
-      { pct: 100, text: 'Done!' }
-    ];
-
-    steps.forEach((step, i) => {
-      setTimeout(() => {
-        fcProgressFill.style.width = step.pct + '%';
-        fcProgressText.textContent = step.text;
-        if (step.pct === 100) {
-          setTimeout(() => {
-            fsChatProgress.classList.remove('active');
-            chatState = 'DEMO';
-            const page = buildFallbackPage();
-            localStorage.setItem('tbouw_preview_page', page);
-            chatClose();
-            showIframeDemo(page, chatLead.business);
-          }, 400);
-        }
-      }, (i + 1) * 600);
-    });
-  });
 }
 
 // ── Build fallback HTML page from template ──
