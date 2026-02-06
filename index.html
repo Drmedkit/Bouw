@@ -310,9 +310,11 @@
     width: 100%; padding: 12px; font-size: 0.85rem; border-radius: 8px;
     border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
     color: inherit; font-family: 'Familjen Grotesk', sans-serif;
-    resize: vertical; min-height: 56px; outline: none; transition: border-color 0.3s;
-    box-sizing: border-box;
+    resize: none; min-height: 56px; outline: none; transition: border-color 0.3s;
+    box-sizing: border-box; overflow: hidden;
+    scrollbar-width: none; -ms-overflow-style: none;
   }
+  .design-prompt-wrap textarea::-webkit-scrollbar { display: none; }
   .design-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.6); }
   .design-prompt-wrap .designer-actions {
     display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
@@ -1180,7 +1182,7 @@
           <div class="design-feature-title">Try it yourself</div>
           <div class="design-feature-desc">Describe a vibe and watch this entire page transform. That's the kind of custom design you get.</div>
           <div class="design-prompt-wrap">
-            <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
+            <textarea id="ai-prompt" placeholder=""></textarea>
             <div class="designer-actions">
               <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
               <button id="ai-reset" onclick="resetDesign()">Reset</button>
@@ -2353,6 +2355,48 @@ const aiPromptInput = document.getElementById('ai-prompt');
 const aiStatus = document.getElementById('ai-status');
 const aiGenerateBtn = document.getElementById('ai-generate');
 let aiCustomStyle = null;
+
+const typewriterPrompts = [
+  'Cozy coffee shop with warm tones',
+  'Dark mode with neon blue accents',
+  'Luxury fashion brand, black and gold',
+  'Playful kids store, bright colors',
+  'Minimalist architecture portfolio',
+  'Tropical surf shop vibes'
+];
+let twIndex = 0, twCharIndex = 0, twTimeout = null, twUserTouched = false;
+function twType() {
+  if (twUserTouched) return;
+  const prompt = typewriterPrompts[twIndex];
+  if (twCharIndex <= prompt.length) {
+    aiPromptInput.value = prompt.slice(0, twCharIndex);
+    twCharIndex++;
+    twTimeout = setTimeout(twType, 45);
+  } else {
+    twTimeout = setTimeout(twErase, 5000);
+  }
+}
+function twErase() {
+  if (twUserTouched) return;
+  const current = aiPromptInput.value;
+  if (current.length > 0) {
+    aiPromptInput.value = current.slice(0, -1);
+    twTimeout = setTimeout(twErase, 25);
+  } else {
+    twIndex = (twIndex + 1) % typewriterPrompts.length;
+    twCharIndex = 0;
+    twTimeout = setTimeout(twType, 400);
+  }
+}
+function twStop() {
+  twUserTouched = true;
+  if (twTimeout) clearTimeout(twTimeout);
+}
+if (aiPromptInput) {
+  aiPromptInput.addEventListener('focus', twStop);
+  aiPromptInput.addEventListener('input', twStop);
+  twType();
+}
 
 async function generateDesign() {
   if (!aiPromptInput) return;
