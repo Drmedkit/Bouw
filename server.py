@@ -3,77 +3,37 @@ import json
 import re
 import uuid
 import threading
-import urllib.request
+import pg8000
+from urllib.parse import urlparse
 from flask import Flask, request, jsonify, send_from_directory
-from anthropic import Anthropic
 from openai import OpenAI
-import resend
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-AI_INTEGRATIONS_ANTHROPIC_API_KEY = os.environ.get("AI_INTEGRATIONS_ANTHROPIC_API_KEY")
-AI_INTEGRATIONS_ANTHROPIC_BASE_URL = os.environ.get("AI_INTEGRATIONS_ANTHROPIC_BASE_URL")
-
-anthropic_client = Anthropic(
-    api_key=AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-    base_url=AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+# xAI Grok client (OpenAI-compatible)
+xai_client = OpenAI(
+    api_key=os.environ.get("XAI_API_KEY"),
+    base_url="https://api.x.ai/v1",
 )
 
-AI_INTEGRATIONS_OPENROUTER_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENROUTER_API_KEY")
-AI_INTEGRATIONS_OPENROUTER_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENROUTER_BASE_URL")
+CHAT_MODEL = "grok-4-1-fast-non-reasoning"
+BUILD_MODEL = "grok-4-1-fast"
+DESIGN_MODEL = "grok-4-1-fast-non-reasoning"
 
-openrouter_client = OpenAI(
-    api_key=AI_INTEGRATIONS_OPENROUTER_API_KEY,
-    base_url=AI_INTEGRATIONS_OPENROUTER_BASE_URL,
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-TOBIAS_EMAIL = os.environ.get("TOBIAS_EMAIL", "")
-
-def get_resend_credentials():
-    hostname = os.environ.get("REPLIT_CONNECTORS_HOSTNAME")
-    token = os.environ.get("REPL_IDENTITY")
-    if token:
-        token = "repl " + token
-    else:
-        renewal = os.environ.get("WEB_REPL_RENEWAL")
-        if renewal:
-            token = "depl " + renewal
-    if not token or not hostname:
-        return None, None
-    try:
-        req = urllib.request.Request(
-            f"https://{hostname}/api/v2/connection?include_secrets=true&connector_names=resend",
-            headers={"Accept": "application/json", "X_REPLIT_TOKEN": token},
-        )
-        r = urllib.request.urlopen(req, timeout=5)
-        data = json.loads(r.read())
-        item = data.get("items", [None])[0] if data.get("items") else None
-        if item and item.get("settings", {}).get("api_key"):
-            return item["settings"]["api_key"], item["settings"].get("from_email", "")
-    except Exception as e:
-        print(f"[resend] Failed to get credentials: {e}")
-    return None, None
-
-
-def send_email(to_email, subject, html_body):
-    api_key, from_email = get_resend_credentials()
-    if not api_key or not from_email:
-        print("[resend] No credentials available, skipping email")
-        return False
-    try:
-        resend.api_key = api_key
-        resend.Emails.send({
-            "from": from_email,
-            "to": [to_email],
-            "subject": subject,
-            "html": html_body,
-        })
-        print(f"[resend] Email sent to {to_email}")
-        return True
-    except Exception as e:
-        print(f"[resend] Failed to send email: {e}")
-        return False
-
+def get_db():
+    parsed = urlparse(DATABASE_URL)
+    conn = pg8000.connect(
+        host=parsed.hostname,
+        port=parsed.port or 5432,
+        user=parsed.username,
+        password=parsed.password,
+        database=parsed.path.lstrip("/"),
+        ssl_context=True,
+    )
+    conn.autocommit = True
+    return conn
 
 build_jobs = {}
 build_lock = threading.Lock()
@@ -216,6 +176,50 @@ The page should look SO good that the client is blown away. This is a sales tool
 Output ONLY the complete HTML. No explanations, no markdown, no code fences."""
 
 
+def save_lead_to_db(job_id, lead, status="building", page_html=None):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO leads (job_id, business, type, vibe, email, name, tagline, colors, services, audience, features, page_html, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (job_id) DO UPDATE SET
+                business = EXCLUDED.business,
+                type = EXCLUDED.type,
+                vibe = EXCLUDED.vibe,
+                email = EXCLUDED.email,
+                name = EXCLUDED.name,
+                tagline = EXCLUDED.tagline,
+                colors = EXCLUDED.colors,
+                services = EXCLUDED.services,
+                audience = EXCLUDED.audience,
+                features = EXCLUDED.features,
+                page_html = EXCLUDED.page_html,
+                status = EXCLUDED.status,
+                updated_at = CURRENT_TIMESTAMP
+        """, (
+            job_id,
+            lead.get("business", ""),
+            lead.get("type", ""),
+            lead.get("vibe", ""),
+            lead.get("email", ""),
+            lead.get("name", ""),
+            lead.get("tagline", ""),
+            lead.get("colors", ""),
+            lead.get("services", ""),
+            lead.get("audience", ""),
+            lead.get("features", ""),
+            page_html,
+            status,
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"[db] Lead saved: {job_id} ({status})")
+    except Exception as e:
+        print(f"[db] Error saving lead: {e}")
+
+
 def build_page_in_background(job_id, lead):
     try:
         prompt = PAGE_BUILD_PROMPT.format(
@@ -231,12 +235,12 @@ def build_page_in_background(job_id, lead):
             features=lead.get("features", ""),
         )
 
-        message = anthropic_client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=8192,
+        response = xai_client.chat.completions.create(
+            model=BUILD_MODEL,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=8192,
         )
-        page_html = message.content[0].text or ""
+        page_html = response.choices[0].message.content or ""
 
         page_html = re.sub(r"^```(?:html)?\s*", "", page_html.strip())
         page_html = re.sub(r"\s*```$", "", page_html)
@@ -248,102 +252,18 @@ def build_page_in_background(job_id, lead):
             build_jobs[job_id]["status"] = "done"
             build_jobs[job_id]["page"] = page_html
 
-        if page_html and lead.get("email"):
-            send_lead_email(lead, page_html)
-        if page_html and TOBIAS_EMAIL:
-            send_tobias_notification(lead, page_html)
+        save_lead_to_db(job_id, lead, status="done", page_html=page_html)
 
     except Exception as e:
         print(f"[build] Error building page for job {job_id}: {e}")
         with build_lock:
             build_jobs[job_id]["status"] = "error"
             build_jobs[job_id]["page"] = None
-
-
-def send_lead_email(lead, page_html):
-    biz = lead.get("business", "your business")
-    name = lead.get("name", "")
-    greeting = f"Hey {name}," if name else "Hey,"
-
-    email_html = f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body {{ margin:0; padding:0; background:#0a0a0a; color:#f0f0f0; font-family:'Segoe UI',system-ui,sans-serif; }}
-.container {{ max-width:600px; margin:0 auto; padding:40px 24px; }}
-h1 {{ font-size:28px; font-weight:700; margin-bottom:8px; }}
-.accent {{ color:#ff2975; }}
-p {{ line-height:1.7; color:#999; font-size:15px; }}
-.preview-box {{ margin:32px 0; padding:24px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:rgba(255,255,255,0.03); }}
-.preview-box h2 {{ font-size:18px; margin:0 0 8px; color:#f0f0f0; }}
-.preview-box p {{ margin:0; font-size:14px; }}
-.cta {{ display:inline-block; margin-top:24px; padding:14px 32px; background:#ff2975; color:#fff; text-decoration:none; border-radius:999px; font-weight:700; font-size:15px; }}
-.footer {{ margin-top:48px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.1); font-size:13px; color:#555; }}
-</style></head><body>
-<div class="container">
-<h1>I built <span class="accent">{biz}</span>'s website.</h1>
-<p>{greeting}</p>
-<p>While we were chatting, I designed a website concept for <strong>{biz}</strong>. No catch — I just wanted to show you what's possible.</p>
-<div class="preview-box">
-<h2>Your custom website preview</h2>
-<p>A personalized {lead.get('vibe', 'modern')} design built specifically for {biz}. Reply to this email to see the full interactive preview, or let's talk about making it real.</p>
-</div>
-<p>This is what I do — I build websites and automations for small businesses. One person, done in days, not months.</p>
-<p>Interested? Just reply to this email.</p>
-<p style="color:#f0f0f0; font-weight:600; margin-top:32px;">— Tobias Bouw</p>
-<p style="font-size:13px; color:#666;">tobiasbouw.com</p>
-<div class="footer">
-<p>You received this because you chatted with me on tobiasbouw.com. No spam, just one cool thing I made for you.</p>
-</div>
-</div></body></html>"""
-
-    send_email(
-        lead["email"],
-        f"I built {biz}'s website — take a look",
-        email_html,
-    )
-
-
-def send_tobias_notification(lead, page_html):
-    email_html = f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-body {{ margin:0; padding:0; background:#0a0a0a; color:#f0f0f0; font-family:'Segoe UI',system-ui,sans-serif; }}
-.container {{ max-width:600px; margin:0 auto; padding:40px 24px; }}
-h1 {{ font-size:24px; margin-bottom:16px; }}
-.field {{ margin:8px 0; }}
-.label {{ color:#ff2975; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; }}
-.value {{ color:#f0f0f0; font-size:15px; margin-top:2px; }}
-hr {{ border:none; border-top:1px solid rgba(255,255,255,0.1); margin:24px 0; }}
-</style></head><body>
-<div class="container">
-<h1>New Lead from Chat</h1>
-<div class="field"><div class="label">Name</div><div class="value">{lead.get('name', 'Not provided')}</div></div>
-<div class="field"><div class="label">Email</div><div class="value">{lead.get('email', 'Not provided')}</div></div>
-<div class="field"><div class="label">Business</div><div class="value">{lead.get('business', 'Not provided')}</div></div>
-<div class="field"><div class="label">Type</div><div class="value">{lead.get('type', 'Not provided')}</div></div>
-<div class="field"><div class="label">Vibe</div><div class="value">{lead.get('vibe', 'Not provided')}</div></div>
-<hr>
-<div class="field"><div class="label">Tagline</div><div class="value">{lead.get('tagline', 'Not provided')}</div></div>
-<div class="field"><div class="label">Preferred Colors</div><div class="value">{lead.get('colors', 'Not provided')}</div></div>
-<div class="field"><div class="label">Services</div><div class="value">{lead.get('services', 'Not provided')}</div></div>
-<div class="field"><div class="label">Target Audience</div><div class="value">{lead.get('audience', 'Not provided')}</div></div>
-<div class="field"><div class="label">Desired Features</div><div class="value">{lead.get('features', 'Not provided')}</div></div>
-<hr>
-<p style="color:#666; font-size:13px;">Website preview was generated and sent to the lead. The full HTML page is attached below for your reference.</p>
-</div></body></html>"""
-
-    send_email(
-        TOBIAS_EMAIL,
-        f"New Lead: {lead.get('business', 'Unknown')} — {lead.get('name', 'No name')}",
-        email_html,
-    )
-
-
-CHAT_MODEL = "meta-llama/llama-3.3-70b-instruct"
+        save_lead_to_db(job_id, lead, status="error")
 
 
 def call_chat_model(api_messages, lead_context):
-    response = openrouter_client.chat.completions.create(
+    response = xai_client.chat.completions.create(
         model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": CHAT_SYSTEM_PROMPT},
@@ -398,13 +318,15 @@ def api_design():
         return jsonify({"error": "Please describe a style."}), 400
 
     try:
-        message = anthropic_client.messages.create(
-            model="claude-haiku-4-5",
+        response = xai_client.chat.completions.create(
+            model=DESIGN_MODEL,
+            messages=[
+                {"role": "system", "content": STYLE_SCHEMA_DESCRIPTION},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=1024,
-            system=STYLE_SCHEMA_DESCRIPTION,
-            messages=[{"role": "user", "content": prompt}],
         )
-        raw = message.content[0].text.strip()
+        raw = response.choices[0].message.content.strip()
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         style = json.loads(raw)
@@ -445,8 +367,7 @@ def api_design():
         return jsonify({"error": "AI returned invalid JSON. Please try again."}), 500
     except Exception as e:
         error_msg = str(e)
-        if "FREE_CLOUD_BUDGET_EXCEEDED" in error_msg:
-            return jsonify({"error": "Cloud budget exceeded. Please try again later."}), 503
+        print(f"[design] Error: {error_msg}")
         return jsonify({"error": f"AI error: {error_msg}"}), 500
 
 
@@ -480,8 +401,6 @@ def api_chat():
         })
     except Exception as e:
         error_msg = str(e)
-        if "FREE_CLOUD_BUDGET_EXCEEDED" in error_msg:
-            return jsonify({"error": "Cloud budget exceeded."}), 503
         print(f"[chat] Error: {error_msg}")
         return jsonify({"error": "Something went wrong. Please try again."}), 500
 
@@ -492,6 +411,7 @@ def api_chat():
         job_id = str(uuid.uuid4())
         with build_lock:
             build_jobs[job_id] = {"status": "building", "page": None, "lead": lead.copy()}
+        save_lead_to_db(job_id, lead, status="building")
         thread = threading.Thread(target=build_page_in_background, args=(job_id, lead))
         thread.daemon = True
         thread.start()
@@ -556,6 +476,39 @@ def chat_continue():
             "reply": "That sounds great! Tell me more about what you'd want on the site.",
             "lead": lead_context,
         })
+
+
+@app.route("/api/leads", methods=["GET"])
+def api_leads():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, job_id, business, type, vibe, email, name, tagline, colors, services, audience, features, status, created_at FROM leads ORDER BY created_at DESC LIMIT 100")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        leads = []
+        for row in rows:
+            leads.append({
+                "id": row[0],
+                "job_id": row[1],
+                "business": row[2],
+                "type": row[3],
+                "vibe": row[4],
+                "email": row[5],
+                "name": row[6],
+                "tagline": row[7],
+                "colors": row[8],
+                "services": row[9],
+                "audience": row[10],
+                "features": row[11],
+                "status": row[12],
+                "created_at": row[13].isoformat() if row[13] else None,
+            })
+        return jsonify(leads)
+    except Exception as e:
+        print(f"[leads] Error: {e}")
+        return jsonify({"error": "Failed to fetch leads"}), 500
 
 
 if __name__ == "__main__":

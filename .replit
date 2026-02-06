@@ -1,11 +1,11 @@
-modules = ["web", "python-3.11"]
+modules = ["web", "python-3.11", "postgresql-16"]
 [agent]
 expertMode = true
 integrations = ["python_anthropic_ai_integrations:1.0.0", "python_openrouter_ai_integrations:1.0.0", "resend:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["python3"]
+packages = ["python3", "postgresql", "libpq"]
 
 [workflows]
 runButton = "Project"
