@@ -269,6 +269,50 @@
     margin-top: 28px;
   }
 
+  .design-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 8px;
+  }
+  .design-feature-card {
+    padding: 28px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(128,128,128,0.15);
+    transition: all 0.4s;
+  }
+  .design-feature-card:hover {
+    border-color: rgba(128,128,128,0.35);
+  }
+  .design-feature-icon {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    opacity: 0.4;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .design-feature-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    transition: font-family 0.4s, color 0.4s;
+  }
+  .design-feature-desc {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    opacity: 0.65;
+    transition: font-family 0.4s, color 0.4s;
+  }
+  @media (max-width: 768px) {
+    .design-features {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .design-feature-card {
+      padding: 22px 20px;
+    }
+  }
+
   .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
   .tag-item { padding: 6px 16px; font-size: 0.8rem; border-radius: 4px; transition: all 0.4s; }
 
@@ -648,39 +692,6 @@
   }
   .demo-nav button:hover { background: rgba(255,255,255,0.2); }
 
-  /* Intro prompt */
-  .intro-prompt-wrap {
-    margin-bottom: 18px;
-  }
-  .intro-prompt-wrap textarea {
-    width: 100%; padding: 12px; font-size: 0.9rem; border-radius: 8px;
-    border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
-    color: inherit; font-family: 'Familjen Grotesk', sans-serif;
-    resize: vertical; min-height: 60px; outline: none; transition: border-color 0.3s;
-  }
-  .intro-prompt-wrap textarea:focus { border-color: rgba(128,128,128,0.6); }
-  .intro-prompt-wrap .designer-actions {
-    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
-  }
-  .intro-prompt-wrap .designer-actions button {
-    padding: 10px 24px; font-size: 0.85rem; border-radius: 999px;
-    border: 1.5px solid currentColor; background: transparent;
-    color: inherit; cursor: pointer; font-family: 'Familjen Grotesk', sans-serif;
-    font-weight: 600; transition: opacity 0.3s, transform 0.2s;
-  }
-  .intro-prompt-wrap .designer-actions button:hover { opacity: 0.7; }
-  .intro-prompt-wrap .designer-actions button:active { transform: scale(0.97); }
-  .intro-prompt-wrap .designer-actions button.primary {
-    background: currentColor;
-  }
-  .intro-prompt-wrap .designer-actions button.primary span {
-    mix-blend-mode: difference;
-  }
-  .intro-prompt-wrap .designer-status {
-    margin-top: 10px; font-size: 0.8rem; font-family: 'Fira Code', monospace;
-    opacity: 0.6; min-height: 1.2em;
-  }
-
   /* Demo mode back button */
   #demo-back {
     position: fixed;
@@ -715,6 +726,7 @@
   }
   body.demo-active #intro { animation-delay: 0s; }
   body.demo-active #websites { animation-delay: 0.08s; }
+  body.demo-active #design { animation-delay: 0.12s; }
   body.demo-active #automations { animation-delay: 0.16s; }
   body.demo-active #stack { animation-delay: 0.24s; }
   body.demo-active #approach { animation-delay: 0.32s; }
@@ -732,8 +744,8 @@
   }
 
   /* Hide designer + mockup grid in demo mode */
-  body.demo-active .intro-prompt-wrap { display: none; }
   body.demo-active .mockup-grid { display: none; }
+  body.demo-active .design-features { display: none; }
 
   /* Clickable mockup cards */
   .mockup-card { cursor: pointer; }
@@ -1070,16 +1082,8 @@
   <section id="intro">
     <div class="section-label">tobiasbouw.com</div>
     <h1 class="section-headline">I build websites<br>& automations for small businesses.</h1>
-    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you — but your website should be <em>yours</em>. Tell me what you're after and I'll design it on the spot.</p>
+    <p class="section-body"><span class="intro-mobile">Swipe left or right to see how this entire page transforms.</span><span class="intro-desktop">Click the styles on the right to see this entire page transform.</span> Each style is a world I can build for you — but your website should be <em>yours</em>.</p>
     <div class="section-detail">
-      <div class="intro-prompt-wrap">
-        <textarea id="ai-prompt" placeholder="e.g. &quot;Cozy coffee shop with warm tones&quot; or &quot;Dark mode with neon blue accents&quot;"></textarea>
-        <div class="designer-actions">
-          <button class="primary" id="ai-generate" onclick="generateDesign()"><span>Generate</span></button>
-          <button id="ai-reset" onclick="resetDesign()">Reset</button>
-        </div>
-        <div class="designer-status" id="ai-status"></div>
-      </div>
       <div class="tagline">1 project per week · Done in days, not months</div>
     </div>
   </section>
@@ -1124,6 +1128,31 @@
               <div class="card-cta">See the demo →</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="design">
+    <div class="section-label">Design</div>
+    <h2 class="section-headline">No templates. No limitations.</h2>
+    <p class="section-body">Every site is designed from scratch for your business. No drag-and-drop builders, no cookie-cutter layouts. Just clean, custom work that looks like you spent ten times more.</p>
+    <div class="section-detail">
+      <div class="design-features">
+        <div class="design-feature-card">
+          <div class="design-feature-icon">01</div>
+          <div class="design-feature-title">Built from zero</div>
+          <div class="design-feature-desc">No templates. Every pixel is placed with intent. Your site won't look like anyone else's.</div>
+        </div>
+        <div class="design-feature-card">
+          <div class="design-feature-icon">02</div>
+          <div class="design-feature-title">Quick changes</div>
+          <div class="design-feature-desc">Need something updated? Email the AI agent and it handles it. New text, new images, new sections — done fast.</div>
+        </div>
+        <div class="design-feature-card">
+          <div class="design-feature-icon">03</div>
+          <div class="design-feature-title">No limits on what's possible</div>
+          <div class="design-feature-desc">Animations, custom layouts, interactive elements — if you can imagine it, it gets built. No plugin restrictions, no platform constraints.</div>
         </div>
       </div>
     </div>
@@ -2031,7 +2060,7 @@ const industries = {
 
 // Store original content for restoring later
 const originalContent = {};
-const sectionIds = ['intro', 'websites', 'automations', 'stack', 'approach', 'cta'];
+const sectionIds = ['intro', 'websites', 'design', 'automations', 'stack', 'approach', 'cta'];
 let demoActive = false;
 const demoBackBtn = document.getElementById('demo-back');
 
@@ -2270,9 +2299,6 @@ document.getElementById('websites').addEventListener('click', (e) => {
 });
 
 // --- AI Designer ---
-const aiPromptInput = document.getElementById('ai-prompt');
-const aiStatus = document.getElementById('ai-status');
-const aiGenerateBtn = document.getElementById('ai-generate');
 let aiCustomStyle = null;
 
 // Restore custom style on load
@@ -2285,52 +2311,6 @@ if (savedStyle) {
   } catch (e) {
     localStorage.removeItem('tbouw_ai_custom_style');
   }
-}
-
-async function generateDesign() {
-  const prompt = aiPromptInput.value.trim();
-  if (!prompt) { aiStatus.textContent = 'Please describe a style.'; return; }
-
-  aiStatus.textContent = 'Generating...';
-  aiGenerateBtn.disabled = true;
-
-  try {
-    const res = await fetch('/api/design', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'API error ' + res.status);
-    }
-
-    const style = await res.json();
-
-    // Validate required fields
-    if (!style.bg || !style.fg || !style.headlineFont || !style.bodyFont) {
-      throw new Error('Incomplete style returned');
-    }
-
-    aiCustomStyle = style;
-    localStorage.setItem('tbouw_ai_custom_style', JSON.stringify(style));
-    applyStyle(style);
-    showToast('AI: ' + (style.name || 'Custom'), style);
-    aiStatus.textContent = 'Applied: ' + (style.name || 'Custom');
-  } catch (e) {
-    aiStatus.textContent = 'Error: ' + e.message;
-  } finally {
-    aiGenerateBtn.disabled = false;
-  }
-}
-
-function resetDesign() {
-  aiCustomStyle = null;
-  localStorage.removeItem('tbouw_ai_custom_style');
-  applyStyle(styles[current]);
-  showToast(styles[current].name, styles[current]);
-  aiStatus.textContent = 'Reset to ' + styles[current].name;
 }
 
 // Override swipe/keyboard navigation to clear AI custom style and exit demo
@@ -2466,7 +2446,7 @@ function chatOpen(entryPoint) {
   chatContext = {
     entryPoint: entryPoint,
     activeStyle: styles[current] ? styles[current].name : '',
-    customPrompt: (document.getElementById('ai-prompt') && document.getElementById('ai-prompt').value.trim()) || '',
+    customPrompt: '',
     device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
   };
 
