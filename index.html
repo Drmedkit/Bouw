@@ -2654,7 +2654,7 @@ const fcProgressText = document.getElementById('fc-progress-text');
 const iframeWrap = document.getElementById('demo-iframe-wrap');
 
 (function initChatViewport() {
-  if (!window.visualViewport) return;
+  if (!window.visualViewport || !fsChat) return;
   function onVPResize() {
     if (!fsChat.classList.contains('open')) return;
     var vp = window.visualViewport;
@@ -2758,6 +2758,7 @@ function showQR(options, callback) {
 
 // ── Open / Close ──
 function chatOpen(entryPoint) {
+  if (!fsChat) return;
   entryPoint = entryPoint || 'unknown';
 
   chatContext = {
@@ -2821,11 +2822,12 @@ function chatOpen(entryPoint) {
 }
 
 function chatClose() {
+  if (!fsChat) return;
   fsChat.classList.remove('open');
   fsChat.style.height = '';
   fsChat.style.top = '0';
   document.body.style.overflow = '';
-  fsChatInput.blur();
+  if (fsChatInput) fsChatInput.blur();
 
   if (buildPolling) {
     clearInterval(buildPolling);
@@ -2834,6 +2836,7 @@ function chatClose() {
 }
 
 function chatSend() {
+  if (!fsChatInput) return;
   const val = fsChatInput.value.trim();
   if (!val) return;
   fsChatInput.value = '';
@@ -2846,9 +2849,11 @@ function chatSend() {
   }
 }
 
-fsChatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); chatSend(); }
-});
+if (fsChatInput) {
+  fsChatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); chatSend(); }
+  });
+}
 
 // ── AI Mode ──
 async function sendToAI(text) {
