@@ -5,7 +5,7 @@ integrations = ["python_anthropic_ai_integrations:1.0.0", "python_openrouter_ai_
 
 [nix]
 channel = "stable-25_05"
-packages = ["python3", "postgresql", "libpq"]
+packages = ["libpq", "postgresql", "python3"]
 
 [workflows]
 runButton = "Project"
@@ -39,3 +39,8 @@ externalPort = 80
 deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "--workers=2", "--timeout=120", "server:app"]
 build = ["bash", "-c", "pip install -r requirements.txt"]
+
+[userenv]
+
+[userenv.shared]
+GOOGLE_SPREADSHEET_ID = "173mp8y0TRmsJpjIsABj0IqozMjspzAe50mfr0IeCw_0"

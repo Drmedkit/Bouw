@@ -2,3 +2,5 @@ flask==3.1.2
 gunicorn==25.0.1
 openai
 pg8000
+google-auth
+gspread
