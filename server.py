@@ -83,43 +83,56 @@ Respond with ONLY the raw JSON object. No explanation, no markdown, no code fenc
 
 CHAT_SYSTEM_PROMPT = """You are Tobias Bouw's AI assistant on his portfolio website (tobiasbouw.com). You help potential clients explore what a website could look like for their business. You're friendly, casual, professional, and genuinely enthusiastic about web design.
 
-Your job: have a natural, engaging conversation to learn about the visitor's business. You're gathering info so Tobias can build them something amazing — but the visitor doesn't know that behind the scenes, a personalized website concept is being built for them while they chat. Keep it casual.
+Your job: have a natural, fun conversation that feels like chatting with a friend — not filling out a form. Behind the scenes you're gathering everything Tobias needs to build them a personalized website concept. The visitor doesn't know a site is being built while they chat. Keep it casual and exciting.
 
-CONVERSATION FLOW:
-1. Start by asking about their business (name, what they do)
-2. Ask about their style/vibe preferences
-3. Ask for their email so you can "send them something cool" or "keep them updated"
-4. Keep gathering details — colors, tagline, key services, target audience, specific features they'd want
-5. Be natural and reactive — comment on their answers, make design suggestions, show enthusiasm
+THE CHAT IS A FUN FORM — gather this info through natural conversation, not as a checklist:
 
-INFORMATION TO GATHER (progressively, not as a checklist):
-Required (get these first):
-- business: Their business name
+Required (get these first, one at a time):
+- business: Their business name ("What's the name of your business?")
 - type: What kind of business (Restaurant, Nightclub / Bar, Online Store, or Other)
 - vibe: Style preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
-- email: Their email address
+- email: Their email ("Where should I send you something cool?")
 
-Nice to have (ask while the site builds):
-- name: Their name
+Important (ask naturally after the basics):
+- name: Their name ("What should I call you?")
+- phone: Their phone number ("What's your number in case Tobias wants to reach out directly?" — keep it casual, not pushy)
+
+Nice to have (ask while the site builds — these make the demo better):
 - tagline: A slogan or tagline for their business
 - colors: Any preferred colors
 - services: Key services or products they offer
 - audience: Who their target customers are
 - features: Specific website features they want (booking, gallery, menu, shop, etc.)
 
+PERSONALITY & TONE:
+- You're enthusiastic about their business — comment on their answers, make design suggestions
+- Ask ONE thing at a time. Never dump multiple questions.
+- React to what they say — "Oh that's sick, a cocktail bar!" not just "Got it."
+- Be playful: "What colors scream YOUR brand?" not "What are your preferred colors?"
+- When they give their email: "Perfect, I've got something cooking for you 👀" or similar
+- When asking for phone: be casual — "Drop your number so Tobias can hit you up directly" — if they skip it, don't push
+
+HANDLING GENERAL QUESTIONS:
+- If someone asks about pricing, services, or just wants info — ANSWER THEM HELPFULLY first
+- Don't force everyone into the funnel. Some people just want to know what Tobias does.
+- After answering their question, gently steer: "Want me to mock something up for you? I can do it right now."
+- If they seem hesitant or stuck: mention they can also WhatsApp Tobias directly at +31 6 18072754 or email tobiassteltnl@gmail.com
+
 IMPORTANT RULES:
 - NEVER mention you're building a website in the background
-- When they give their email, say something like "Perfect, I'll send you something cool." or "Check your inbox in a moment — I've got something for you."
-- Keep the energy up — be excited about their business
 - Ask ONE thing at a time, don't overwhelm them
-- After getting email, keep asking about details (colors, services, etc.) — this buys time for the build
+- After getting email, keep asking about details — this buys time for the build
+- If they already have info pre-filled from context (like vibe from the style they were viewing), acknowledge it: "I see you vibed with the dark & bold look — want to go with that?"
+
+{context_block}
 
 Your response must ALWAYS be valid JSON with this structure:
-{
+{{
   "reply": "Your conversational message to the user",
-  "lead": {
+  "lead": {{
     "name": "their name or empty string",
     "email": "their email or empty string",
+    "phone": "their phone number or empty string",
     "business": "business name or empty string",
     "type": "Restaurant|Nightclub / Bar|Online Store|Other or empty string",
     "vibe": "Warm & Elegant|Dark & Bold|Clean & Minimal|Loud & Electric|Playful & Fun|Raw & Edgy or empty string",
@@ -128,8 +141,8 @@ Your response must ALWAYS be valid JSON with this structure:
     "services": "key services/products or empty string",
     "audience": "target audience or empty string",
     "features": "desired features or empty string"
-  }
-}
+  }}
+}}
 
 Remember: respond with ONLY the JSON object. No markdown, no code fences, no explanation outside the JSON."""
 
@@ -176,19 +189,20 @@ The page should look SO good that the client is blown away. This is a sales tool
 Output ONLY the complete HTML. No explanations, no markdown, no code fences."""
 
 
-def save_lead_to_db(job_id, lead, status="building", page_html=None):
+def save_lead_to_db(job_id, lead, status="building", page_html=None, entry_context=""):
     try:
         conn = get_db()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO leads (job_id, business, type, vibe, email, name, tagline, colors, services, audience, features, page_html, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO leads (job_id, business, type, vibe, email, name, phone, tagline, colors, services, audience, features, page_html, status, entry_context)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (job_id) DO UPDATE SET
                 business = EXCLUDED.business,
                 type = EXCLUDED.type,
                 vibe = EXCLUDED.vibe,
                 email = EXCLUDED.email,
                 name = EXCLUDED.name,
+                phone = EXCLUDED.phone,
                 tagline = EXCLUDED.tagline,
                 colors = EXCLUDED.colors,
                 services = EXCLUDED.services,
@@ -196,6 +210,7 @@ def save_lead_to_db(job_id, lead, status="building", page_html=None):
                 features = EXCLUDED.features,
                 page_html = EXCLUDED.page_html,
                 status = EXCLUDED.status,
+                entry_context = EXCLUDED.entry_context,
                 updated_at = CURRENT_TIMESTAMP
         """, (
             job_id,
@@ -204,6 +219,7 @@ def save_lead_to_db(job_id, lead, status="building", page_html=None):
             lead.get("vibe", ""),
             lead.get("email", ""),
             lead.get("name", ""),
+            lead.get("phone", ""),
             lead.get("tagline", ""),
             lead.get("colors", ""),
             lead.get("services", ""),
@@ -211,6 +227,7 @@ def save_lead_to_db(job_id, lead, status="building", page_html=None):
             lead.get("features", ""),
             page_html,
             status,
+            entry_context,
         ))
         conn.commit()
         cur.close()
@@ -262,11 +279,38 @@ def build_page_in_background(job_id, lead):
         save_lead_to_db(job_id, lead, status="error")
 
 
-def call_chat_model(api_messages, lead_context):
+def build_context_block(context):
+    if not context:
+        return ""
+    parts = ["VISITOR CONTEXT (use this to personalize your greeting and conversation):"]
+    entry = context.get("entryPoint", "")
+    if entry == "work_with_me":
+        parts.append("- They clicked 'Work with me' in the top navigation — they're interested but may just want info.")
+    elif entry == "cta":
+        parts.append("- They clicked 'Ready to build yours' at the bottom — they're ready to go, match that energy!")
+    elif entry.startswith("demo_"):
+        demo_name = entry.replace("demo_", "").replace("_", " ").title()
+        parts.append(f"- They were viewing the {demo_name} industry demo — they loved that concept. Reference it!")
+    style = context.get("activeStyle", "")
+    if style:
+        parts.append(f"- They were viewing the '{style}' design theme on the portfolio — mention it if relevant.")
+    custom_prompt = context.get("customPrompt", "")
+    if custom_prompt:
+        parts.append(f"- They typed a custom design prompt: \"{custom_prompt}\" — they have a clear vision, build on it!")
+    device = context.get("device", "")
+    if device == "mobile":
+        parts.append("- They're on mobile — if they seem hesitant, suggest WhatsApp (+31 6 18072754) as an easy way to continue the conversation.")
+    return "\n".join(parts)
+
+
+def call_chat_model(api_messages, lead_context, visitor_context=None):
+    context_block = build_context_block(visitor_context)
+    system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block)
+
     response = xai_client.chat.completions.create(
         model=CHAT_MODEL,
         messages=[
-            {"role": "system", "content": CHAT_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             *api_messages,
         ],
         max_tokens=1024,
@@ -279,7 +323,7 @@ def call_chat_model(api_messages, lead_context):
     result = json.loads(raw)
 
     lead_defaults = {
-        "name": "", "email": "", "business": "", "type": "", "vibe": "",
+        "name": "", "email": "", "phone": "", "business": "", "type": "", "vibe": "",
         "tagline": "", "colors": "", "services": "", "audience": "", "features": "",
     }
     lead = result.get("lead", {})
@@ -376,6 +420,7 @@ def api_chat():
     data = request.get_json(silent=True) or {}
     messages = data.get("messages", [])
     lead_context = data.get("lead", {})
+    visitor_context = data.get("context", {})
 
     api_messages = []
     for msg in messages:
@@ -384,19 +429,40 @@ def api_chat():
         if text:
             api_messages.append({"role": role, "content": text})
 
+    empty_lead = {"name": "", "email": "", "phone": "", "business": "", "type": "", "vibe": "", "tagline": "", "colors": "", "services": "", "audience": "", "features": ""}
+
     if not api_messages:
+        context_block = build_context_block(visitor_context)
+        system_prompt = CHAT_SYSTEM_PROMPT.format(context_block=context_block)
+        try:
+            response = xai_client.chat.completions.create(
+                model=CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": "[The visitor just opened the chat. Greet them based on the context provided. Keep it short and engaging.]"},
+                ],
+                max_tokens=512,
+            )
+            raw = response.choices[0].message.content or ""
+            raw = raw.strip()
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+            result = json.loads(raw)
+            greeting = result.get("reply", "Hey! Tell me about your business and I'll design something for you right now.")
+        except Exception:
+            greeting = "Hey! I'm Tobias's AI assistant. Tell me about your business and I'll design a website for you right now."
         return jsonify({
-            "reply": "Hey! I'm Tobias's AI assistant. I build websites for small businesses — tell me about yours and let's see what I can do for you. What's your business called?",
-            "lead": {"name": "", "email": "", "business": "", "type": "", "vibe": "", "tagline": "", "colors": "", "services": "", "audience": "", "features": ""},
+            "reply": greeting,
+            "lead": empty_lead,
             "buildTriggered": False,
         })
 
     try:
-        result, lead = call_chat_model(api_messages, lead_context)
+        result, lead = call_chat_model(api_messages, lead_context, visitor_context)
     except json.JSONDecodeError:
         return jsonify({
             "reply": "I'd love to hear more — tell me about your business!",
-            "lead": lead_context or {"name": "", "email": "", "business": "", "type": "", "vibe": "", "tagline": "", "colors": "", "services": "", "audience": "", "features": ""},
+            "lead": lead_context or empty_lead,
             "buildTriggered": False,
         })
     except Exception as e:
@@ -407,11 +473,13 @@ def api_chat():
     has_minimum = lead.get("business") and lead.get("type") and lead.get("vibe")
     has_email = bool(lead.get("email"))
 
+    entry_ctx_str = json.dumps(visitor_context) if visitor_context else ""
+
     if has_minimum and has_email:
         job_id = str(uuid.uuid4())
         with build_lock:
             build_jobs[job_id] = {"status": "building", "page": None, "lead": lead.copy()}
-        save_lead_to_db(job_id, lead, status="building")
+        save_lead_to_db(job_id, lead, status="building", entry_context=entry_ctx_str)
         thread = threading.Thread(target=build_page_in_background, args=(job_id, lead))
         thread.daemon = True
         thread.start()
@@ -452,6 +520,7 @@ def chat_continue():
     data = request.get_json(silent=True) or {}
     messages = data.get("messages", [])
     lead_context = data.get("lead", {})
+    visitor_context = data.get("context", {})
 
     api_messages = []
     for msg in messages:
@@ -464,7 +533,7 @@ def chat_continue():
         return jsonify({"reply": "Tell me more!", "lead": lead_context})
 
     try:
-        result, lead = call_chat_model(api_messages, lead_context)
+        result, lead = call_chat_model(api_messages, lead_context, visitor_context)
         return jsonify({
             "reply": result.get("reply", "Tell me more!"),
             "lead": lead,
@@ -483,7 +552,7 @@ def api_leads():
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT id, job_id, business, type, vibe, email, name, tagline, colors, services, audience, features, status, created_at FROM leads ORDER BY created_at DESC LIMIT 100")
+        cur.execute("SELECT id, job_id, business, type, vibe, email, name, phone, tagline, colors, services, audience, features, status, entry_context, created_at FROM leads ORDER BY created_at DESC LIMIT 100")
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -497,13 +566,15 @@ def api_leads():
                 "vibe": row[4],
                 "email": row[5],
                 "name": row[6],
-                "tagline": row[7],
-                "colors": row[8],
-                "services": row[9],
-                "audience": row[10],
-                "features": row[11],
-                "status": row[12],
-                "created_at": row[13].isoformat() if row[13] else None,
+                "phone": row[7],
+                "tagline": row[8],
+                "colors": row[9],
+                "services": row[10],
+                "audience": row[11],
+                "features": row[12],
+                "status": row[13],
+                "entry_context": row[14],
+                "created_at": row[15].isoformat() if row[15] else None,
             })
         return jsonify(leads)
     except Exception as e:

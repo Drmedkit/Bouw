@@ -816,9 +816,36 @@
   }
   #fs-chat-close:hover { color: #fff; }
 
+  #fs-chat-contact-bar {
+    width: 100%; max-width: 520px;
+    display: flex; gap: 10px; justify-content: center;
+    padding: 60px 24px 0;
+    z-index: 2;
+  }
+  #fs-chat-contact-bar a {
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 0.8rem; font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+  }
+  #fs-chat-contact-bar a:hover { opacity: 0.85; transform: scale(1.02); }
+  #fs-chat-wa {
+    background: #25D366; color: #fff;
+  }
+  #fs-chat-email {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  @media (min-width: 769px) {
+    #fs-chat-wa { font-size: 0.75rem; padding: 6px 14px; }
+  }
+
   #fs-chat-scroll {
     flex: 1; width: 100%; max-width: 520px;
-    overflow-y: auto; padding: 80px 24px 16px;
+    overflow-y: auto; padding: 16px 24px 16px;
     display: flex; flex-direction: column; gap: 12px;
     scroll-behavior: smooth;
   }
@@ -1015,7 +1042,7 @@
 
 <div id="topbar">
   <span class="name">Tobias Bouw</span>
-  <button class="cta-link" onclick="chatOpen()">Work with me</button>
+  <button class="cta-link" onclick="chatOpen('work_with_me')">Work with me</button>
 </div>
 
 <main id="content">
@@ -1109,7 +1136,7 @@
     <h2 class="section-headline">Ready to build yours?</h2>
     <p class="section-body">Whether you need a landing page, booking system, or automations that save you hours every week — let's make it happen. I take on one project per week. If you're ready, let's talk.</p>
     <div class="section-detail">
-      <button class="cta-button" id="cta-button" onclick="chatOpen()" style="display:inline-block;margin-top:8px;padding:14px 32px;border:none;border-radius:999px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:transform 0.3s">Let's build yours →</button>
+      <button class="cta-button" id="cta-button" onclick="chatOpen('cta')" style="display:inline-block;margin-top:8px;padding:14px 32px;border:none;border-radius:999px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:transform 0.3s">Let's build yours →</button>
     </div>
   </section>
 </main>
@@ -1140,6 +1167,10 @@
 
 <div id="fs-chat">
   <button id="fs-chat-close" onclick="chatClose()">&times;</button>
+  <div id="fs-chat-contact-bar">
+    <a id="fs-chat-wa" href="https://wa.me/31618072754?text=Hey%20Tobias%2C%20I%20checked%20out%20your%20portfolio%20and%20I%27m%20interested!" target="_blank" rel="noopener">WhatsApp Tobias</a>
+    <a id="fs-chat-email" href="mailto:tobiassteltnl@gmail.com?subject=Website%20Inquiry&body=Hey%20Tobias%2C%20I%20saw%20your%20portfolio%20and%20I%27m%20interested!" target="_blank" rel="noopener">Email instead</a>
+  </div>
   <div id="fs-chat-scroll"></div>
   <div id="fs-chat-qr"></div>
   <div id="fs-chat-progress">
@@ -2308,11 +2339,12 @@ const iframeLabel = document.getElementById('demo-iframe-label');
 const leadCaptureCta = document.getElementById('lead-capture-cta');
 
 let chatState = 'IDLE';
-const chatLead = { name: '', email: '', business: '', type: '', vibe: '', tagline: '', colors: '', services: '', audience: '', features: '' };
+const chatLead = { name: '', email: '', phone: '', business: '', type: '', vibe: '', tagline: '', colors: '', services: '', audience: '', features: '' };
 const chatHistory = [];
 let useAI = false;
 let currentJobId = null;
 let buildPolling = null;
+let chatContext = {};
 
 // Vibe → style theme mapping (fallback mode)
 const vibeStyleMap = {
@@ -2380,7 +2412,22 @@ function showQR(options, callback) {
 }
 
 // ── Open / Close ──
-function chatOpen() {
+function chatOpen(entryPoint) {
+  entryPoint = entryPoint || 'unknown';
+
+  chatContext = {
+    entryPoint: entryPoint,
+    activeStyle: styles[current] ? styles[current].name : '',
+    customPrompt: (document.getElementById('ai-prompt') && document.getElementById('ai-prompt').value.trim()) || '',
+    device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
+  };
+
+  const waLink = document.getElementById('fs-chat-wa');
+  if (waLink) {
+    const waText = encodeURIComponent('Hey Tobias, I checked out your portfolio' + (chatContext.activeStyle ? ' (loved the ' + chatContext.activeStyle + ' style)' : '') + ' and I\'m interested!');
+    waLink.href = 'https://wa.me/31618072754?text=' + waText;
+  }
+
   fsChat.classList.add('open');
   if (chatState === 'IDLE') {
     chatState = 'ACTIVE';
@@ -2388,11 +2435,10 @@ function chatOpen() {
     fsChatQR.innerHTML = '';
     fsChatInputBar.classList.remove('hidden');
     fsChatProgress.classList.remove('active');
-    fsChatInput.placeholder = 'Your name...';
+    fsChatInput.placeholder = 'Type here...';
 
-    // Try AI endpoint
     fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [] })
+      body: JSON.stringify({ messages: [], context: chatContext })
     }).then(r => {
       if (r.ok) return r.json();
       throw new Error('no api');
@@ -2403,7 +2449,6 @@ function chatOpen() {
       } else {
         botSay('Hey! Tell me about your business and I\'ll design a website for you right now.');
       }
-      fsChatInput.placeholder = 'Type here...';
     }).catch(() => {
       useAI = false;
       chatState = 'ASKING_NAME';
@@ -2442,7 +2487,7 @@ async function sendToAI(text) {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, lead: chatLead })
+      body: JSON.stringify({ messages: chatHistory, lead: chatLead, context: chatContext })
     });
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
