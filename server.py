@@ -89,28 +89,26 @@ ABSOLUTE RULE: NEVER use emojis. Not a single one. No exceptions. Write in plain
 
 CONVERSATION FLOW — Ask questions in this order (one at a time):
 
-PRIORITY 1 — Get the business name FIRST:
+DESIGN ESSENTIALS — Collect these three fast, they drive the design:
 1. business: Their business name ("What's your business called?")
-   - This is the most important field. Get it immediately.
-
-PRIORITY 2 — Core details (ask these next, quickly):
 2. type: Business category — accept whatever they say (restaurant, trades, consulting, etc.)
    - Ask: "What type of business is it?"
 3. vibe: Design preference (Warm & Elegant, Dark & Bold, Clean & Minimal, Loud & Electric, Playful & Fun, Raw & Edgy)
    - Ask: "Which style direction fits? Warm & elegant, dark & bold, clean & minimal, loud & electric, playful & fun, or raw & edgy?"
    - If they're unsure: "Dark & bold works well for bars. Clean & minimal suits professional services."
 
-PRIORITY 3 — Email (REQUIRED for preview):
-4. email: Their email address ("What's your email?")
-   - After receiving: Continue gathering additional details below
+Once you have business + type + vibe, the design is being created. Keep gathering the rest without mentioning it.
 
-PRIORITY 4 — Additional details (gather these while preview builds):
+EMAIL — Required before we can show the preview:
+4. email: Their email address ("What email should we send it to?")
+
+ENRICHMENT — Gather while the design builds (nice-to-haves):
 5. name: Their name ("What's your name?")
-6. tagline: Business tagline ("Do you have a tagline or slogan?")
+6. phone: Contact number ("Best number to reach you?")
 7. colors: Brand colors ("Any specific brand colors?")
-8. services: Key offerings ("What are your main products or services?")
-9. audience: Target market ("Who's your target audience?")
-10. phone: Contact number ("Best number to reach you?")
+8. tagline: Business tagline ("Do you have a tagline or slogan?")
+9. services: Key offerings ("What are your main products or services?")
+10. audience: Target market ("Who's your target audience?")
 11. features: Website features ("Any specific features? Booking, gallery, e-commerce?")
 
 TONE & STYLE:
@@ -560,14 +558,14 @@ def api_chat():
         print(f"[chat] Error: {error_msg}")
         return jsonify({"error": "Something went wrong. Please try again."}), 500
 
-    has_business = bool(lead.get("business"))
+    has_design_essentials = lead.get("business") and lead.get("type") and lead.get("vibe")
     has_email = bool(lead.get("email"))
     existing_job = data.get("jobId")  # Frontend passes this after build triggered
 
     entry_ctx_str = json.dumps(visitor_context) if visitor_context else ""
 
-    # Phase 1: Business name collected — start building immediately with defaults
-    if has_business and not existing_job:
+    # Phase 1: Design essentials collected (business + type + vibe) — start building
+    if has_design_essentials and not existing_job:
         job_id = str(uuid.uuid4())
         with build_lock:
             build_jobs[job_id] = {

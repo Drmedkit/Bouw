@@ -38,7 +38,7 @@ Context-aware conversational lead capture using fast AI model.
 - Response: `{ "reply": "...", "lead": {...}, "buildTriggered": bool, "jobId": "..." }`
 - Model: grok-4-1-fast-non-reasoning
 - First call (empty messages) generates a context-aware greeting based on entry point, style viewed, custom prompt, and device
-- When lead has business + type + vibe + email → triggers background page build
+- When lead has business + type + vibe → triggers background page build (email required only to show preview)
 
 ### GET /api/chat/status/<job_id>
 Poll for background page build status.
@@ -74,9 +74,9 @@ leads (
 ## Chat Flow (Parallel Architecture)
 1. Visitor opens chat from any entry point → context captured (style, entry point, device)
 2. AI generates personalized greeting based on context
-3. AI asks for business name FIRST — this is the trigger
-4. As soon as business name is captured → background build starts immediately (page + images in parallel)
-5. Chat continues gathering type, vibe, email, name, phone, extras — all while build runs
+3. AI collects design essentials fast: business name, type, vibe
+4. As soon as all three are collected → background build starts (page + images in parallel)
+5. Chat continues gathering email, name, phone, colors, extras — all while build runs
 6. Build uses ThreadPoolExecutor: page HTML and custom images (grok-2-image) generate simultaneously
 7. Images are injected into page HTML after both complete (Unsplash URLs replaced with custom ones)
 8. Preview shown only after BOTH email is collected AND build is done
