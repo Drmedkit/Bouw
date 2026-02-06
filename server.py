@@ -29,14 +29,24 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
     parsed = urlparse(DATABASE_URL)
-    conn = pg8000.connect(
-        host=parsed.hostname,
-        port=parsed.port or 5432,
-        user=parsed.username,
-        password=parsed.password,
-        database=parsed.path.lstrip("/"),
-        ssl_context=True,
-    )
+    try:
+        conn = pg8000.connect(
+            host=parsed.hostname,
+            port=parsed.port or 5432,
+            user=parsed.username,
+            password=parsed.password,
+            database=parsed.path.lstrip("/"),
+            ssl_context=True,
+        )
+    except Exception:
+        conn = pg8000.connect(
+            host=parsed.hostname,
+            port=parsed.port or 5432,
+            user=parsed.username,
+            password=parsed.password,
+            database=parsed.path.lstrip("/"),
+            ssl_context=False,
+        )
     conn.autocommit = True
     return conn
 
