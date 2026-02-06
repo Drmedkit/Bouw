@@ -9,8 +9,13 @@ import pg8000
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
-import gspread
-from google.oauth2.service_account import Credentials
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+    GSPREAD_AVAILABLE = True
+except ImportError as e:
+    print(f"[sheets] gspread not available: {e}")
+    GSPREAD_AVAILABLE = False
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
@@ -57,6 +62,8 @@ GOOGLE_SPREADSHEET_ID = os.environ.get("GOOGLE_SPREADSHEET_ID", "")
 SHEET_HEADERS = ["Timestamp", "Job ID", "Status", "Business", "Type", "Vibe", "Email", "Name", "Phone", "Colors", "Tagline", "Services", "Audience", "Features", "Entry Context"]
 
 def get_gsheet():
+    if not GSPREAD_AVAILABLE:
+        return None
     sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "")
     if not sa_json or not GOOGLE_SPREADSHEET_ID:
         return None
